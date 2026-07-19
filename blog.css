@@ -57,7 +57,6 @@ figcaption {
 }
 
 .substack-replies {
-  border-left: 2px solid var(--bs-border-color);
   margin: 1rem 0 0 1.25rem;
   padding-left: 1rem;
 }
