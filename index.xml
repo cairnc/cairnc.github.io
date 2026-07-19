@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>Cairn Overturf&#39;s Blog</title>
+<link>https://cairnc.github.io/</link>
+<atom:link href="https://cairnc.github.io/index.xml" rel="self" type="application/rss+xml"/>
+<description></description>
+<generator>quarto-1.9.38</generator>
+<lastBuildDate>Mon, 21 Jul 2025 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe</title>
+  <dc:creator>Cairn O</dc:creator>
+  <link>https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>A few years ago in 2022 there was a great paper published <a href="https://lmontaut.github.io/nesterov-gjk.github.io/">Collision Detection Accelerated: An Optimization Perspective</a>. From the abstract:</p>
+<blockquote class="blockquote">
+<p>In this work we leverage the fact that collision detection is fundamentally a convex optimization problem. In particular, we establish that the GJK algorithm is a specific sub-case of the well-established Frank-Wolfe (FW) algorithm.</p>
+</blockquote>
+<p>As far as I can tell, the paper was not shared much in the game programming community despite being linked on the <a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">GJK Wikipedia page</a>. I have seen almost no discussion or exposition of Frank-Wolfe among game physics programmers. The goal of this blog post is to spread the word. As the authors show, there may still be ways to improve GJK using techniques from optimization.</p>
+<p>For the uninitiated, the <a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">Gilbert–Johnson–Keerthi</a> (GJK) algorithm is an integral part of most modern video game physics engines and is used to detect when objects collide. It was discovered in 1988, and nowadays all the cool kids use it or some variant as a basis for collision detection, for example, <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/source/geomutils/src/gjk/GuGJK.h">PhysX</a>, <a href="https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/NarrowPhaseCollision/btGjkEpa2.cpp">Bullet</a>, <a href="https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Experimental/Chaos/Public/Chaos/GJK.h">Chaos</a>, <a href="https://github.com/jrouwe/JoltPhysics/blob/master/Jolt/Geometry/GJKClosestPoint.h">Jolt</a>, and <a href="https://media.steampowered.com/apps/valve/2015/DirkGregorius_Contacts.pdf">Rubikon</a>. The <a href="https://en.wikipedia.org/wiki/Frank%E2%80%93Wolfe_algorithm">Frank-Wolfe</a> (FW) algorithm is a general iterative algorithm from the mathematical optimization world used for solving convex problems. The beauty of FW is that it applies to a much broader class of problems and arguably requires less knowledge of geometry. FW was discovered in 1956 and has a <a href="https://mathshistory.st-andrews.ac.uk/Extras/Frank-Wolfe_and_friends/">delightful history</a>. It’s truly ancient. This is what your grandma used for detecting whether her polytopes intersected. Interestingly, the <a href="https://graphics.stanford.edu/courses/cs448b-00-winter/papers/gilbert.pdf">original GJK paper</a> explicitly states that the GJK algorithm is a <em>descent procedure</em> similar to an algorithm by Wolfe<sup>1</sup>. It is unclear whether Gilbert, Johnson, or Keerthi<sup>2</sup> derived the algorithm from FW or maybe the connection is so <em>trivial</em> to people working in optimization that it is pointless to mention.</p>
+<p>In any case, the 2022 paper seems to be the first to show the connection explicitly, but it seems to be a well-known fact in the optimization community. For example, the 2009 paper <em><a href="https://www.m8j.net/data/List/Files-143/Coresets%20for%20Polytope%20Distance%20-%20Martins%20Version.pdf">Coresets for Polytope Distance</a>,</em> notes:</p>
+<blockquote class="blockquote">
+<p><em>Gilbert’s geometric algorithm … is in fact just an instance of the Frank–Wolfe approximation algorithm for quadratic programs</em></p>
+</blockquote>
+<p>Later in the same paper:</p>
+<blockquote class="blockquote">
+<p><em>A variant of Gilbert’s algorithm, the GJK algorithm, is a popular algorithm for collision detection in 3 dimensional space</em></p>
+</blockquote>
+<p>This is the earliest reference I found, but I would not be surprised if the connection was known since 1988 and simply never shared with game programmers<sup>3</sup>. Perhaps game physics programmers do know of the connection and are holding out on us. It seems unlikely. In my experience, the pedagogy of GJK is very geometry-centric with the optimization perspective rarely being emphasized<sup>4</sup>.</p>
+<p>Perhaps part of the reason for this geometric focus is that game developers have done a <em>really, really</em> good job at explaining GJK geometrically. Examples include <a href="https://www.r-5.org/files/books/computers/algo-list/game-development/Gino_van_den_Bergen-Collision_Detection_in_Interactive_3D_Environments-EN.pdf">Bergen’s book,</a> <a href="https://realtimecollisiondetection.net/pubs/SIGGRAPH04_Ericson_GJK_notes.pdf">Ericson’s book,</a> <a href="https://www.youtube.com/watch?v=Qupqu1xe7Io">the infamous presentation by Casey Muratori</a><sup>5</sup>, <a href="https://box2d.org/files/ErinCatto_GJK_GDC2010.pdf">Erin Catto’s talk</a>, and others. Nonetheless, the optimization perspective is clearly valuable, as the 2022 paper demonstrates. If you want another way to understand GJK and the collision detection problem in general, I highly recommend reading the paper. It is very accessible and includes code. The rest of this blog post contains nothing not in the paper, just the points I find most salient.</p>
+<section id="deriving-gjk-from-frank-wolfe-in-a-nutshell" class="level1">
+<h1>Deriving GJK From Frank-Wolfe in a Nutshell</h1>
+<ol type="1">
+<li><p>Formulate collision detection as a convex optimization problem.</p></li>
+<li><p>Apply the Frank-Wolfe algorithm, but maintain an active set that is a simplex containing the current iterate. (In the classic FW line-search variant, the active set is just a line.)</p></li>
+</ol>
+<p>Set up the convex optimization problem:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign*%7D%0A%20%20%5Ctext%7Bdist%7D(A,%20B)%5E2%20&amp;=%20%5Cbegin%7Barray%7D%5Bt%5D%7Bll%7D%0A%20%20%20%20%20%20%20%20%5Cmin_%7Ba,b%7D%20&amp;%20%5C%7Ca-b%5C%7C%5E2%20%5C%5C%0A%20%20%20%20%20%20%20%20%5Ctext%7Bsubject%20to%7D%20&amp;%20a%20%5Cin%20A%20%5C%5C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20&amp;%20b%20%5Cin%20B%0A%20%20%20%20%5Cend%7Barray%7D%20%5C%5C%5B1em%5D%0A%20%20&amp;=%20%5Cbegin%7Barray%7D%5Bt%5D%7Bll%7D%0A%20%20%20%20%20%20%20%20%5Cmin_%7Bx%7D%20&amp;%20%20%5C%7Cx%5C%7C%5E2%20%5C%5C%0A%20%20%20%20%20%20%20%20%5Ctext%7Bsubject%20to%7D%20&amp;%20x%20%5Cin%20A-B%0A%20%20%20%20%20%5Cend%7Barray%7D%0A%5Cend%7Balign*%7D"> Pattern matching gives the objective and gradient:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign*%7D%0Af(x)%20&amp;=%20%5C%7Cx%5C%7C%5E2%20%5C%5C%0A%5Cnabla%20f(x)%20&amp;=%202x%0A%5Cend%7Balign*%7D"> The linear subproblem is:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign*%7D%0As_k%20&amp;=%20%5Carg%5Cmin_%7Bs%20%5Cin%20%5Cmathcal%7BD%7D%7D%20s%5ET%20%5Cnabla%20f(x_k)%20%5C%5C%0A%20%20%20%20&amp;=%20%5Carg%5Cmin_%7Bs%20%5Cin%20%5Cmathcal%7BD%7D%7D%20s%5ET%20(2x_k)%20%5C%5C%0A%20%20%20%20&amp;=%20%5Carg%5Cmin_%7Bs%20%5Cin%20%5Cmathcal%7BD%7D%7D%20s%5ET%20x_k%20%5C%5C%0A%20%20%20%20&amp;=%20%5Coperatorname%7Bsupport%7D_D(-x_k)%0A%5Cend%7Balign*%7D"> Plugging this into the line-search version of FW, we get Algorithm 3 from the 2022 paper. This is the standard FW line-search, expressed with an active set:</p>
+<div class="center">
+
+</div>
+<p>This looks very close to GJK, except that we always project onto a line and discard previous subproblem solutions. This algorithm works well when the origin is far from the feasible set.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/images/figure-01.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 1: Frank-Wolfe line search for a 2D convex polygon converging in 2 iterations
+</figcaption>
+</figure>
+<p>When the origin is near the boundary, however, FW begins to zig-zag.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/images/figure-02.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 2: Frank-Wolfe line search failing to converge after 100 iterations
+</figcaption>
+</figure>
+<p>The intuition is hopefully straightforward. Since each line search occurs only between the last iterate (inside the hull) and a vertex, we never reach the boundary. We move along each line until we hit the valley (the minimum of the quadratic restricted to that line). Notice that if we stepped all the way to the boundary (the support point) in the first iteration, the next line search would yield the exact solution (as in Figure 1). This motivates tracking a larger active set: if it included the boundary segment nearest the origin, projecting onto it would give the exact solution.</p>
+<p>Including <em>more</em> points in the active set leads to Algorithm 4 from the 2022 paper, which is GJK:</p>
+<div class="center">
+
+</div>
+<ul>
+<li><p>Step 4 corresponds to the GJK step of adding a support point to the simplex.</p></li>
+<li><p>Steps 5 and 6 correspond to finding the nearest point on the simplex to the origin and checking whether the simplex contains the origin, respectively.</p></li>
+<li><p>Step 7 is the portion of GJK that reduces the simplex to its boundary containing the closest point.</p></li>
+</ul>
+<p>I find this explanation of GJK far more intuitive (and easier to derive) than the purely geometric one popular online. It requires remembering only a few key ideas. Notice that we didn’t need the Minkowski difference or support functions except as notation, though understanding the geometry certainly helps. If my summary is unclear (highly likely), read the paper until it clicks. The authors explain the concepts very well and provide many useful references on active sets and related history.</p>
+<p>Thanks for reading!</p>
+<p>If you liked this post, you might like my <a href="https://cairno.substack.com/p/improvements-to-the-separating-axis">other post about the Separating Axis Test</a>.</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>P. Wolfe, “Finding the nearest point in a polytope,” Math. Programming, vol.&nbsp;11, pp.&nbsp;128-149, 1976.↩︎</p></li>
+<li id="fn2"><p>Keerthi is on LinkedIn; maybe someone should ask him :-)↩︎</p></li>
+<li id="fn3"><p>To be clear, game developers are certainly aware that collision detection of separated shapes is a convex optimization problem, but I have not seen any discussion of FW.<br>
+<br>
+Christer Ericson <a href="https://x.com/ChristerEricson/status/1947381763455782981">tweeted</a> that game programmers probably were not aware GJK was derived from FW at the time of writing Real Time Collision Detection.↩︎</p></li>
+<li id="fn4"><p>The classic book <a href="https://www.r-5.org/files/books/computers/algo-list/game-development/Gino_van_den_Bergen-Collision_Detection_in_Interactive_3D_Environments-EN.pdf">Collision Detection in Interactive 3D Environments</a> by Gino van den Bergen does mention it briefly on page 122.↩︎</p></li>
+<li id="fn5"><p>Casey’s video is so well-regarded that Havok (widely considered the leading physics engine) includes it in its new-hire training.↩︎</p></li>
+</ol>
+</section></div> ]]></description>
+  <category>collision detection</category>
+  <category>optimization</category>
+  <category>GJK</category>
+  <guid>https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/</guid>
+  <pubDate>Mon, 21 Jul 2025 05:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Improvements to the Separating Axis Test</title>
+  <dc:creator>Cairn O</dc:creator>
+  <link>https://cairnc.github.io/posts/improvements-to-the-separating-axis/</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>This article will assume some familiarity with narrow phase collision detection methods and associated geometric concepts such as the Minkowski sum.</p>
+<p>A few years ago I was watching Dirk’s great presentation, The Separating Axis Test between Convex Polyhedra (<a href="https://gdcvault.com/play/1017646/Physics-for-Game-Programmers-The">video</a>, <a href="https://media.gdcvault.com/gdc2013/slides/822403Gregorius_Dirk_TheSeparatingAxisTest.pdf">slides</a>). Around the 18 minute mark (slide 29) he starts talking about overlaying Gauss maps of convex polyhedra to find the faces of their Minkowski difference.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-01.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 1: A gauss map for two convex hulls
+</figcaption>
+</figure>
+<p>The upshot is that all faces of the minkowski difference are either:</p>
+<ol type="1">
+<li><p>A face of shape <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"></p></li>
+<li><p>A face of shape <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"></p></li>
+<li><p>A cross product of an edge from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and an edge from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"></p></li>
+</ol>
+<p>And most importantly, you can avoid a costly full support function evaluation in case #3 because you know a vertex that lies on the face. After letting that fact sink, I wondered — why can’t we skip the support function evaluation for all the points on the Gauss map? Turns out you can, the result is a version of the separating axis test that requires only one full support function evaluation as opposed to FaceCountA+FaceCountB. Before we get to the details, let’s back up a bit.</p>
+<p>TLDR: <a href="https://github.com/cairnc/sat_blog/tree/main">Github repo</a></p>
+<section id="collision-detection-formalization" class="level1">
+<h1>Collision Detection Formalization</h1>
+<p>Let A and B be two bounded convex sets in <strong><img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E%7B3%7D"></strong>. There are two scenarios:</p>
+<ol type="1">
+<li><p>No overlap — We want the closest point between the two sets.</p></li>
+<li><p>Overlap — We want to find the minimum translation we can apply to separate the shapes.</p></li>
+</ol>
+<p>Let’s describe each case more formally and discuss solvers that are appropriate.</p>
+<section id="no-overlap-case" class="level2">
+<h2 class="anchored" data-anchor-id="no-overlap-case">No Overlap Case</h2>
+<p>Suppose <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"> are disjoint sets. The closest pair of points, one from each set, is the pair that minimizes the distance between them. The following formulations are equivalent.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0A%5Coperatorname%7Bdist%7D(A,B)%5E2%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bx,y%7D%20%5ClVert%20x-y%5CrVert%5E2%20%5C%5C%0A%20%20%20%20%20%20%20&amp;x%20%5Cin%20A%20%5C%5C%0A%20%20%20%20%20%20%20&amp;y%20%5Cin%20B%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B1%7D%20%5C%5C%5B0.5em%5D%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bx,y%7D%20d%20%5C%5C%0A%20%20%20%20%20%20%20&amp;d%20%5Cgeq%20%5ClVert%20x-y%5CrVert%5E2%20%5C%5C%0A%20%20%20%20%20%20%20&amp;x%20%5Cin%20A%20%5C%5C%0A%20%20%20%20%20%20%20&amp;y%20%5Cin%20B%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B2%7D%20%5C%5C%5B0.5em%5D%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bd,z%7D%20d%20%5C%5C%0A%20%20%20%20%20%20%20&amp;d%20%5Cgeq%20%5ClVert%20z%5CrVert%5E2%20%5C%5C%0A%20%20%20%20%20%20%20&amp;z%20%5Cin%20A-B%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B3%7D%0A%5Cend%7Balign%7D"> Notice that the Minkowski difference shows up in the last formulation. Since all of these formulations are convex, iterative convex solvers<sup>1</sup> should <em>quickly</em> converge to the global solution. A discussion of non-GJK solvers in games deserves its own post. For the rest of this one, I’ll focus on the overlapping case.</p>
+</section>
+<section id="overlap-case" class="level2">
+<h2 class="anchored" data-anchor-id="overlap-case">Overlap Case</h2>
+<p>Suppose <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"> are intersecting. To push the sets apart we must find a direction <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv%7D"> and a distance <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bs%7D"> such that the translated set <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B(B+s%5Ccdot%20v)%7D"> has no intersection with <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign%7D%0As%5E%5Cstar%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bs,v%7D%20s%20%5C%5C%0A%20%20%20%20%20%20%20&amp;%5ClVert%20v%5CrVert%20=%201%20%5C%5C%0A%20%20%20%20%20%20%20&amp;(y+s%20v)%20%5Ccdot%20v%20%5Cgeq%20x%20%5Ccdot%20v,%0A%20%20%20%20%20%20%20%20%20%5Cquad%20%5Cforall%20x%20%5Cin%20A,%5C%20%5Cforall%20y%20%5Cin%20B%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B5%7D%20%5C%5C%5B0.5em%5D%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bs,v%7D%20s%20%5C%5C%0A%20%20%20%20%20%20%20&amp;%5ClVert%20v%5CrVert%20=%201%20%5C%5C%0A%20%20%20%20%20%20%20&amp;(y-x)%20%5Ccdot%20v%20%5Cgeq%20-s,%0A%20%20%20%20%20%20%20%20%20%5Cquad%20%5Cforall%20x%20%5Cin%20A,%5C%20%5Cforall%20y%20%5Cin%20B%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B6%7D%20%5C%5C%5B0.5em%5D%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bs,v%7D%20s%20%5C%5C%0A%20%20%20%20%20%20%20&amp;%5ClVert%20v%5CrVert%20=%201%20%5C%5C%0A%20%20%20%20%20%20%20&amp;z%20%5Ccdot%20v%20%5Cleq%20s,%0A%20%20%20%20%20%20%20%20%20%5Cquad%20%5Cforall%20z%20%5Cin%20A-B%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B7%7D%20%5C%5C%5B0.5em%5D%0A%20%20&amp;=%20%5Cbegin%7Baligned%7D%5Bt%5D%0A%20%20%20%20%20%20%20&amp;%5Cmin_%7Bs,v%7D%20s%20%5C%5C%0A%20%20%20%20%20%20%20&amp;%5ClVert%20v%5CrVert%20=%201%20%5C%5C%0A%20%20%20%20%20%20%20&amp;%5Coperatorname%7Bsupp%7D(A-B,v)%20%5Cleq%20s%0A%20%20%20%20%20%5Cend%7Baligned%7D%0A%20%20%5Ctag%7B8%7D%20%5C%5C%5B0.5em%5D%0A%20%20&amp;=%20%5Cmin_%7B%5ClVert%20v%5CrVert=1%7D%20%5Coperatorname%7Bsupp%7D(A-B,v)%0A%20%20%5Ctag%7B9%7D%0A%5Cend%7Balign%7D"> This problem is not convex due to the quadratic equality constraint <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%7Cv%7C=1%7D">. For the support functions we care about, this problem can be classified as a non-convex quadratically constrained quadratic program (<a href="https://en.wikipedia.org/wiki/Quadratically_constrained_quadratic_program">QCQP</a>). Geometrically, we are minimising a function on the surface of a sphere — much like searching for the lowest elevation on Earth</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-02.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 2: A spherical plot of the support function of a translated unit cube
+</figcaption>
+</figure>
+<p>Hopefully it is clear from the plot above that an iterative solver is not guaranteed to find the global minimum<sup>2</sup>. Now that we have some language to talk about this optimization problem, the rest of the article will focus on solving this problem and specifically, a variant of the SAT algorithm.</p>
+</section>
+</section>
+<section id="solving-the-overlap-problem" class="level1">
+<h1>Solving The Overlap Problem</h1>
+<p>So far, we were able to formulate our problems without relying on any specialized geometry knowledge about Minkowski differences, support functions, Gauss maps, etc. The Minkowski difference and support function appeared naturally in the final formulation, but I intentionally did not want to dwell on them. My goal with this article is to show that this can be modelled as <em>just another optimization problem</em> without using too much hard earned geometry knowledge. I find this is often a good strategy for solving advanced math problems in games<sup>3</sup>. Start from the most abstract, general version of the problem, and aggressively optimize your solution for the specific case you’re dealing with.</p>
+<p>In this case, we are optimizing a function on the unit sphere — formulation (9). So what properties of our objective function can we take advantage of? The objective function is</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Balign*%7D%0A%20%20f(v)%20&amp;=%20%5Cmax_%7Bz%20%5Cin%20C%7D%20(z%20%5Ccdot%20v)%20%5C%5C%0A%20%20%5Ctext%7Bwhere%7D%5Cqquad%20C%20&amp;=%20A-B%0A%5Cend%7Balign*%7D"> Here are some questions we can ask ourselves</p>
+<ul>
+<li><p>Is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf%7D"> differentiable?</p></li>
+<li><p>Is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf%7D"> fast to compute?</p></li>
+<li><p>If we just computed <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(v)%7D"> can we compute <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(v+e)%7D"> quickly for small <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Be%7D"></p></li>
+<li><p>etc</p></li>
+</ul>
+<p>The optimal solver will look different depending on the answers to these questions. In this case, the answers depend on the set <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%7D">, e.g.&nbsp;if <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%7D"> is a ball then our minimization problem is solvable analytically. I began this post talking about convex polyhedra so we are finally getting to the meat and potatoes.</p>
+<section id="overlap-problem-for-convex-polyhedra" class="level2">
+<h2 class="anchored" data-anchor-id="overlap-problem-for-convex-polyhedra">Overlap Problem for Convex Polyhedra</h2>
+<p>For the rest of this post we will assume that <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%7D"> is a convex polyhedron defined as the convex hull of vertices <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bc_%7B1%7D,%20c_%7B2%7D,%20%5Cdots%20c_%7Bn%7D%7D">.</p>
+<section id="example-in-2d" class="level3">
+<h3 class="anchored" data-anchor-id="example-in-2d">Example in 2D</h3>
+<p>To get our feet wet, let’s plot the support function for <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%7D"> defined by the following vertices</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation*%7D%0A%5Cbegin%7Baligned%7D%0A%20%20c_1%20&amp;=%20%5Cbegin%7Bbmatrix%7D-1.2%20&amp;%201.8%5Cend%7Bbmatrix%7D%20&amp;%0A%20%20c_2%20&amp;=%20%5Cbegin%7Bbmatrix%7D%202%20&amp;%202.8%5Cend%7Bbmatrix%7D%20%5C%5C%0A%20%20c_3%20&amp;=%20%5Cbegin%7Bbmatrix%7D%201%20&amp;%20-0.7%5Cend%7Bbmatrix%7D%20&amp;%0A%20%20c_4%20&amp;=%20%5Cbegin%7Bbmatrix%7D-1%20&amp;%20-0.2%5Cend%7Bbmatrix%7D%0A%5Cend%7Baligned%7D%0A%5Cend%7Bequation*%7D"> Below are plots of the polygon, a plot of the support function in <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cmathbb%7BR%7D%5E%7B2%7D%7D"> and a cartesian plot of the support function on the circle, from <strong>0</strong> to <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B2%5Cpi%7D">.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-03.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 3: Plot of a convex polygon
+</figcaption>
+</figure>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-04.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 4: Plot of the support function in <img src="https://latex.codecogs.com/png.latex?%E2%84%9D2"> with the values on the circle highlighted
+</figcaption>
+</figure>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-05.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 5: Cartesian plot of the support function
+</figcaption>
+</figure>
+<p>From the last two plots it is easy to extract a few useful properties about <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(v)%7D">:</p>
+<ol type="1">
+<li><p>The function is differentiable except for a finite number of points where there are <em>kinks —</em> discontinuities in the first derivative.</p></li>
+<li><p>Each differentiable region corresponds to a vertex of our polygon and when constrained to that region, the function is concave. We will call these regions of the sphere vertex regions. Remember that <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%20=%20A%20-%20B%7D"> so each vertex region actually corresponds to a pair of vertices, one from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and one from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D">.</p></li>
+<li><p>From the definition of the support function, the kinks occur when e.g.&nbsp;when<br>
+<img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bc_%7B1%7D%20%5Ccdot%20v%20=%20c_%7B2%7D%20%5Ccdot%20v%7D">, which implies they occur at the point on the sphere satisfying<br>
+<img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B(c_%7B1%7D%20-%20c_%7B2%7D)%20%5Ccdot%20v%20=%200%7D">. This means <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv%7D"> must be perpendicular to the edge of the polygon. In other words the kinks occur at the face normals of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%7D">. This is also intuitive, imagine what happens as the support direction sweeps from one vertex to another. In the middle it will be perpendicular to the polygon face and the projection along that direction of both face vertices will be the same.</p></li>
+</ol>
+<p>These properties can be proven using definition of the support function if you want to be rigorous. From calculus, we know that the minimum of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(%5Ctheta)%7D"> restricted to a vertex region must occur at the boundary. Then globally the minimum must occur at one of the kink points, this gives us a global solver. We simply evaluate <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf%7D"> at all the kink points and pick the minimum value. In this example it is simple to enumerate the kinks because we specified all the vertices which can be used to derive the face normals. In practice we know the vertices of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"> and don’t explicitly construct <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BC%7D">. However this is not a problem since <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Coperatorname%7Bsupp%7D(A-B,%20v)%20=%20%5Coperatorname%7Bsupp%7D(A,%20v)%20+%20%5Coperatorname%7Bsupp%7D(B,-v)%7D"> and the kink points of a sum of functions are the union of the kink points from the individual functions. So in practice we would evaluate <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf%7D"> at all the normals of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and the normals of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"> and pick the minimum value. Hopefully you have realized that what we have discovered is the regular separating axis test in 2D. Notice that we didn’t do much geometry, we just used some basic calculus facts. This 2D case is very similar to the 3D case which we will look at next.</p>
+</section>
+<section id="general-case-in-3d" class="level3">
+<h3 class="anchored" data-anchor-id="general-case-in-3d">General case in 3D</h3>
+<p>In <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cmathbb%7BR%7D%5E%7B2%7D%7D"> the discontinuities of the support function’s derivative were along lines passing through the origin and the intersection of the lines with the circle were points. In <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cmathbb%7BR%7D%5E%7B3%7D%7D"> it shouldn’t be a stretch that the discontinuities of the support function lie within planes passing through the origin. Restricted to the sphere, these discontinuity sets form great-circle arcs</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-06.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 6: Intersection of planes with a sphere forming great circle. Source: <a href="https://en.wikipedia.org/wiki/Spherical_geometry">Wikipedia article on Spherical Geometry</a>
+</figcaption>
+</figure>
+<p>If we plot the discontinuities coming from both <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D"> we get a picture like I showed in the beginning of the article.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-07.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 7: Discontinuities in the derivative of <img src="https://latex.codecogs.com/png.latex?supp%E2%80%86(A%E2%80%85%E2%88%92%E2%80%85B,%E2%80%86v)"> constrained to the sphere
+</figcaption>
+</figure>
+<p>In the 3D case our objective function has similar properties to 2D:</p>
+<ol type="1">
+<li><p>The vertex region for <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bc_%7Bi%7D%7D"> is bounded by <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BK_%7Bi%7D%7D"> planes. The plane separating two neighboring vertex regions corresponding to <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bc_%7B1%7D%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bc_%7B2%7D%7D"> is defined by<br>
+<img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B(c_%7B1%7D%20-%20c_%7B2%7D)%20%5Ccdot%20v%20=%200%7D">.</p></li>
+<li><p>The boundary curve for a vertex region has <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BK_%7Bi%7D%7D"> discontinuities which are located at the face normals. The line of reasoning from 2D can be generalized to 3D. Since the face normals occur at intersections of geodesic arcs, we have that face normals are parallel or antiparallel to the cross product of any two nonparallel edges of the face.</p></li>
+<li><p>The minimum of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf%7D"> over a vertex region occurs at the face normals. A similar calculus argument can be used here. The min over the 2D portion occurs at its boundary. The min of the 1D portion occurs at its boundary.</p></li>
+<li><p>The global min can be found by enumerating all face normals (vertex region boundary kinks).</p></li>
+</ol>
+<p>From the last property above we get the separating axis test described by Dirk’s presentation. Namely, iterate over all face normals of the minkowski difference and calculate the projection. The important optimization that Dirk points out is that the new face normals formed by cross products can avoid a full support function evaluation because you know a vertex that lies on the face of the Minkowski difference. We can take this idea further and save the support function evaluation for all face normals (except one) because it should be clear that we can determine neighboring vertex regions for each face normal.</p>
+</section>
+<section id="optimized-sat-test" class="level3">
+<h3 class="anchored" data-anchor-id="optimized-sat-test">Optimized SAT Test</h3>
+<p>Here’s the main idea. Traverse the arcs on the sphere using a graph traversal algorithm and as you traverse keep track of the support point for each region. In more detail</p>
+<ol type="1">
+<li><p>Pick a point <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bw%7D"> on one of the arc end points in figure (7) and calculate the vertex region you are in <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B-B%7D">. I.e. calculate <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Coperatorname%7Bsupp%7D(A,w)%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Coperatorname%7Bsupp%7D(-B,w)%7D"> and keep track of the vertices <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Ba,%20b%7D">.</p></li>
+<li><p>Follow the arc and as you move across the sphere keep track of which other arcs you intersect. Every time you hit an arc you enter into a new vertex region.</p></li>
+<li><p>Every intersection or endpoint <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bw%7D"> you traverse is a face normal and the support function is simply <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bw%20%5Ccdot%20(a%20-%20b)%7D"></p></li>
+</ol>
+<p>Let us consider a concrete example using the diagram below. Denote the face normals by greek letters with <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Calpha_%7Bi%7D%7D">, <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta_%7Bi%7D%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cgamma_%7Bi%7D%7D"> corresponding to the face normals of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D">, <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B-B%7D"> and the new face normals of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA-B%7D"> respectively. Similarly, the latin alphabet is used to denote the vertex regions of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B-B%7D">. That is, if <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BG%7D"> is the intersection of regions labeled <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Ba_%7B1%20%7D%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bb_%7B2%20%7D%7D"> then</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cbegin%7Bequation%7D%0A%5Ctag%7B10%7D%0A%20%20%5Coperatorname%7Bsupp%7D(A-B,v)%20=%20(a_1-b_2)%20%5Ccdot%20v,%0A%20%20%5Cqquad%20%5Ctext%7Bfor%20all%20%7D%20v%20%5Cin%20G%0A%5Cend%7Bequation%7D"></p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-08.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 8: Labeled Gauss Map
+</figcaption>
+</figure>
+<p>Here are the first few iterations of the example</p>
+<ol type="1">
+<li><p>Start at <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Calpha_%7B1%20%7D%7D"> arbitrarily and calculate the the vertex region <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bb_%7B1%7D%7D"> using a full evaluation of the support function of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BB%7D">. We know that we are also in <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Ba_%7B1%7D%7D"> for free. Record<br>
+<img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(%5Calpha_%7B1%7D)%20=%20%5Calpha_%7B1%7D%20%5Ccdot%20(a_%7B1%7D%20-%20b_%7B1%7D)%7D">.</p></li>
+<li><p>Begin traversing the arc from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Calpha_%7B1%20%7D%7D"> to <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Calpha_%7B2%20%7D%7D"> and find that you intersect the arc<br>
+between <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta_%7B1%20%7D%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta_%7B3%20%7D%7D"> , the intersection point is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cgamma_%7B4%7D%7D">. Record <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(%5Cgamma_%7B4%7D)%20=%20%5Cgamma_%7B4%7D%20%5Ccdot%20(a_%7B1%7D%20-%20b_%7B1%7D)%7D">.</p></li>
+<li><p>Passing through the plane in the previous step moved you move from region <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bb_%7B1%7D%7D"> to region <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bb_%7B2%7D%7D">. Keep moving from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cgamma_%7B4%20%7D%7D"> to <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cgamma_%7B3%20%7D%7D"> and record <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(%5Cgamma_%7B3%7D)%20=%20%5Cgamma_%7B3%7D%20%5Ccdot%20(a_%7B1%7D%20-%20b_%7B2%7D)%7D"></p></li>
+<li><p>Continue on moving from <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cgamma_%7B3%20%7D%7D"> to <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Calpha_%7B2%20%7D%7D"> . Since we intersected another plane defined by the arc between <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta_%7B2%20%7D%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta_%7B3%20%7D%7D"> we will update our vertex region to <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bb_%7B3%7D%7D"> . Record <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(%5Calpha_%7B2%7D)%20=%20%5Calpha_%7B2%7D%20%5Ccdot%20(a_%7B1%7D%20-%20b_%7B3%7D)%7D">.</p></li>
+<li><p>Continue this process until all arcs of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BA%7D"> have been traversed.</p></li>
+</ol>
+<p>That is pretty much the whole idea. There are a lot of important implementation details like what data structures to use and how to implement arc tracing and intersection tests but this post is already getting too long. If you are curious about the nitty gritty details you can browse the code linked at the beginning and end of the article. In broad strokes these are some of the must haves</p>
+<p>Use some variant of a <strong>half edge data structure</strong>. You need as much topological information you can get. For each vertex I store a flat array of all its connected edges. For each edge I also store the face on each side of the edge.</p>
+<p><code>{.c++ language="C++"} struct Edge  {      uint8_t vert0, vert1;     uint8_t face0, face1;  };</code></p>
+<p><strong>Sort hull edges topologically</strong> by arc connectivity so that during traversal every new arc you traverse you know you have already started or terminated at it.</p>
+<p><strong>Ensure your hull builder produces high quality hull</strong>s. Like the regular separating axis test, this algorithm is sensitive to the quality of the hull. However I haven’t noticed any numerical issues so far that are any worse than regular SAT.</p>
+</section>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>We’ve covered a different way to look at the Separating Axis Test, not as a purely geometric algorithm, but as an optimization problem on a sphere. By analyzing the properties of the support function, we found its minimum must lie on the "kinks" formed by the intersection of great circles on a Gauss map.</p>
+<p>The key insight is that this map is just a graph that we can incrementally traverse. Instead of re-calculating the support function at each node (face normal), we can perform one initial calculation and then traverse the graph, updating the support vertex cheaply as we cross the boundaries (arcs) into new regions. This is essentially the same support function optimization that many physics engines call hill climbing.</p>
+<p>If you want to see it in action, I’ve put together a demo for Visual Studio on Windows where you can compare the two methods and visualize gauss maps. In my testing, this graph-traversal approach is 5-10x faster than the regular SAT for convex hulls with many faces. For hull vs triangle the speed up is ~1.2x due to fewer edge cross products. Additionally, the version of the algorithm implemented in the demo has some numerical problems with triangles. I’m not sure if it’s due to contact generation or collision detection. This problem is completely fixable and I had it working at some point but the branch seems to be lost to the sands of time. Hopefully I can find some time to get it working again.</p>
+<p>I discovered this traversal method independently, but as with most problems in computational geometry, it was probably first solved by someone in the 70s. If this algorithm has a name or if you know of any games that use a similar technique, please let me know! I’d love to learn more about its history.</p>
+<p><a href="https://github.com/cairnc/sat_blog/tree/main">Github repo</a></p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">GJK</a> is one of the most popular iterative solver but any convex optimization algorithm should work. Iterative methods can also be warm started like GJK using previous solutions. There are a plethora of iterative convex solvers, examples include <a href="https://en.wikipedia.org/wiki/Frank%E2%80%93Wolfe_algorithm">interior-point methods</a>, <a href="https://en.wikipedia.org/wiki/Mirror_descent">gradient descent methods</a>, <a href="https://en.wikipedia.org/wiki/Ellipsoid_method">the ellipsoid method</a>, <a href="https://en.wikipedia.org/wiki/Convex_optimization">etc</a>.↩︎</p></li>
+<li id="fn2"><p>However <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bf(v)%7D"> constrained to the sphere becomes better behaved as origin moves closer to the hull boundary. Below is a cross section of the support function of the unit cube as it is shifted away from the origin. Notice that the support functions starts to look convex away from 0 radians.</p>
+<div class="center">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-09.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>image</figcaption>
+</figure>
+</div>
+</div>
+↩︎</li>
+<li id="fn3"><p>A philosophy I learned from Chris Hecker’s great GDC lecture <em><a href="https://chrishecker.com/The_Mixed_Linear_Complementarity_Problem">Lemke’s Algorithm: The Hammer in Your Math Toolbox</a></em>↩︎</p></li>
+</ol>
+</section></div> ]]></description>
+  <category>collision detection</category>
+  <category>optimization</category>
+  <guid>https://cairnc.github.io/posts/improvements-to-the-separating-axis/</guid>
+  <pubDate>Wed, 09 Jul 2025 05:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>

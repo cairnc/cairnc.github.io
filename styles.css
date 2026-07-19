@@ -1,0 +1,23 @@
+.quarto-title-block .quarto-title-banner {
+  background: transparent;
+}
+
+.page-columns .content {
+  max-width: 900px;
+}
+
+.math.display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+figure img {
+  display: block;
+  height: auto !important;
+  margin-inline: auto;
+  max-width: 100%;
+}
+
+figcaption {
+  text-align: center;
+}

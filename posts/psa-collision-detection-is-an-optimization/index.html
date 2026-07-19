@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Cairn O">
+<meta name="dcterms.date" content="2025-07-21">
+<meta name="description" content="An optimization-oriented explanation of GJK as a fully corrective Frank-Wolfe algorithm.">
+
+<title>PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe – Cairn Overturf’s Blog</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-6388ad00bb6ecaefa25b9a98db1edf18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe – Cairn Overturf’s Blog">
+<meta property="og:description" content="An optimization-oriented explanation of GJK as a fully corrective Frank-Wolfe algorithm.">
+<meta property="og:image" content="https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/images/figure-01.png">
+<meta property="og:site_name" content="Cairn Overturf’s Blog">
+<meta property="og:image:height" content="679">
+<meta property="og:image:width" content="674">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Cairn Overturf’s Blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#deriving-gjk-from-frank-wolfe-in-a-nutshell" id="toc-deriving-gjk-from-frank-wolfe-in-a-nutshell" class="nav-link active" data-scroll-target="#deriving-gjk-from-frank-wolfe-in-a-nutshell">Deriving GJK From Frank-Wolfe in a Nutshell</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">collision detection</div>
+    <div class="quarto-category">optimization</div>
+    <div class="quarto-category">GJK</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    An optimization-oriented explanation of GJK as a fully corrective Frank-Wolfe algorithm.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Cairn O </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 21, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A few years ago in 2022 there was a great paper published <a href="https://lmontaut.github.io/nesterov-gjk.github.io/">Collision Detection Accelerated: An Optimization Perspective</a>. From the abstract:</p>
+<blockquote class="blockquote">
+<p>In this work we leverage the fact that collision detection is fundamentally a convex optimization problem. In particular, we establish that the GJK algorithm is a specific sub-case of the well-established Frank-Wolfe (FW) algorithm.</p>
+</blockquote>
+<p>As far as I can tell, the paper was not shared much in the game programming community despite being linked on the <a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">GJK Wikipedia page</a>. I have seen almost no discussion or exposition of Frank-Wolfe among game physics programmers. The goal of this blog post is to spread the word. As the authors show, there may still be ways to improve GJK using techniques from optimization.</p>
+<p>For the uninitiated, the <a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">Gilbert–Johnson–Keerthi</a> (GJK) algorithm is an integral part of most modern video game physics engines and is used to detect when objects collide. It was discovered in 1988, and nowadays all the cool kids use it or some variant as a basis for collision detection, for example, <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/source/geomutils/src/gjk/GuGJK.h">PhysX</a>, <a href="https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/NarrowPhaseCollision/btGjkEpa2.cpp">Bullet</a>, <a href="https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Experimental/Chaos/Public/Chaos/GJK.h">Chaos</a>, <a href="https://github.com/jrouwe/JoltPhysics/blob/master/Jolt/Geometry/GJKClosestPoint.h">Jolt</a>, and <a href="https://media.steampowered.com/apps/valve/2015/DirkGregorius_Contacts.pdf">Rubikon</a>. The <a href="https://en.wikipedia.org/wiki/Frank%E2%80%93Wolfe_algorithm">Frank-Wolfe</a> (FW) algorithm is a general iterative algorithm from the mathematical optimization world used for solving convex problems. The beauty of FW is that it applies to a much broader class of problems and arguably requires less knowledge of geometry. FW was discovered in 1956 and has a <a href="https://mathshistory.st-andrews.ac.uk/Extras/Frank-Wolfe_and_friends/">delightful history</a>. It’s truly ancient. This is what your grandma used for detecting whether her polytopes intersected. Interestingly, the <a href="https://graphics.stanford.edu/courses/cs448b-00-winter/papers/gilbert.pdf">original GJK paper</a> explicitly states that the GJK algorithm is a <em>descent procedure</em> similar to an algorithm by Wolfe<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. It is unclear whether Gilbert, Johnson, or Keerthi<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> derived the algorithm from FW or maybe the connection is so <em>trivial</em> to people working in optimization that it is pointless to mention.</p>
+<p>In any case, the 2022 paper seems to be the first to show the connection explicitly, but it seems to be a well-known fact in the optimization community. For example, the 2009 paper <em><a href="https://www.m8j.net/data/List/Files-143/Coresets%20for%20Polytope%20Distance%20-%20Martins%20Version.pdf">Coresets for Polytope Distance</a>,</em> notes:</p>
+<blockquote class="blockquote">
+<p><em>Gilbert’s geometric algorithm … is in fact just an instance of the Frank–Wolfe approximation algorithm for quadratic programs</em></p>
+</blockquote>
+<p>Later in the same paper:</p>
+<blockquote class="blockquote">
+<p><em>A variant of Gilbert’s algorithm, the GJK algorithm, is a popular algorithm for collision detection in 3 dimensional space</em></p>
+</blockquote>
+<p>This is the earliest reference I found, but I would not be surprised if the connection was known since 1988 and simply never shared with game programmers<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. Perhaps game physics programmers do know of the connection and are holding out on us. It seems unlikely. In my experience, the pedagogy of GJK is very geometry-centric with the optimization perspective rarely being emphasized<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
+<p>Perhaps part of the reason for this geometric focus is that game developers have done a <em>really, really</em> good job at explaining GJK geometrically. Examples include <a href="https://www.r-5.org/files/books/computers/algo-list/game-development/Gino_van_den_Bergen-Collision_Detection_in_Interactive_3D_Environments-EN.pdf">Bergen’s book,</a> <a href="https://realtimecollisiondetection.net/pubs/SIGGRAPH04_Ericson_GJK_notes.pdf">Ericson’s book,</a> <a href="https://www.youtube.com/watch?v=Qupqu1xe7Io">the infamous presentation by Casey Muratori</a><a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>, <a href="https://box2d.org/files/ErinCatto_GJK_GDC2010.pdf">Erin Catto’s talk</a>, and others. Nonetheless, the optimization perspective is clearly valuable, as the 2022 paper demonstrates. If you want another way to understand GJK and the collision detection problem in general, I highly recommend reading the paper. It is very accessible and includes code. The rest of this blog post contains nothing not in the paper, just the points I find most salient.</p>
+<section id="deriving-gjk-from-frank-wolfe-in-a-nutshell" class="level1">
+<h1>Deriving GJK From Frank-Wolfe in a Nutshell</h1>
+<ol type="1">
+<li><p>Formulate collision detection as a convex optimization problem.</p></li>
+<li><p>Apply the Frank-Wolfe algorithm, but maintain an active set that is a simplex containing the current iterate. (In the classic FW line-search variant, the active set is just a line.)</p></li>
+</ol>
+<p>Set up the convex optimization problem:</p>
+<p><span class="math display">\[\begin{align*}
+  \text{dist}(A, B)^2 &amp;= \begin{array}[t]{ll}
+        \min_{a,b} &amp; \|a-b\|^2 \\
+        \text{subject to} &amp; a \in A \\
+                          &amp; b \in B
+    \end{array} \\[1em]
+  &amp;= \begin{array}[t]{ll}
+        \min_{x} &amp;  \|x\|^2 \\
+        \text{subject to} &amp; x \in A-B
+     \end{array}
+\end{align*}\]</span> Pattern matching gives the objective and gradient:</p>
+<p><span class="math display">\[\begin{align*}
+f(x) &amp;= \|x\|^2 \\
+\nabla f(x) &amp;= 2x
+\end{align*}\]</span> The linear subproblem is:</p>
+<p><span class="math display">\[\begin{align*}
+s_k &amp;= \arg\min_{s \in \mathcal{D}} s^T \nabla f(x_k) \\
+    &amp;= \arg\min_{s \in \mathcal{D}} s^T (2x_k) \\
+    &amp;= \arg\min_{s \in \mathcal{D}} s^T x_k \\
+    &amp;= \operatorname{support}_D(-x_k)
+\end{align*}\]</span> Plugging this into the line-search version of FW, we get Algorithm 3 from the 2022 paper. This is the standard FW line-search, expressed with an active set:</p>
+<div class="center">
+
+</div>
+<p>This looks very close to GJK, except that we always project onto a line and discard previous subproblem solutions. This algorithm works well when the origin is far from the feasible set.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-01.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 1: Frank-Wolfe line search for a 2D convex polygon converging in 2 iterations
+</figcaption>
+</figure>
+<p>When the origin is near the boundary, however, FW begins to zig-zag.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-02.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 2: Frank-Wolfe line search failing to converge after 100 iterations
+</figcaption>
+</figure>
+<p>The intuition is hopefully straightforward. Since each line search occurs only between the last iterate (inside the hull) and a vertex, we never reach the boundary. We move along each line until we hit the valley (the minimum of the quadratic restricted to that line). Notice that if we stepped all the way to the boundary (the support point) in the first iteration, the next line search would yield the exact solution (as in Figure 1). This motivates tracking a larger active set: if it included the boundary segment nearest the origin, projecting onto it would give the exact solution.</p>
+<p>Including <em>more</em> points in the active set leads to Algorithm 4 from the 2022 paper, which is GJK:</p>
+<div class="center">
+
+</div>
+<ul>
+<li><p>Step 4 corresponds to the GJK step of adding a support point to the simplex.</p></li>
+<li><p>Steps 5 and 6 correspond to finding the nearest point on the simplex to the origin and checking whether the simplex contains the origin, respectively.</p></li>
+<li><p>Step 7 is the portion of GJK that reduces the simplex to its boundary containing the closest point.</p></li>
+</ul>
+<p>I find this explanation of GJK far more intuitive (and easier to derive) than the purely geometric one popular online. It requires remembering only a few key ideas. Notice that we didn’t need the Minkowski difference or support functions except as notation, though understanding the geometry certainly helps. If my summary is unclear (highly likely), read the paper until it clicks. The authors explain the concepts very well and provide many useful references on active sets and related history.</p>
+<p>Thanks for reading!</p>
+<p>If you liked this post, you might like my <a href="https://cairno.substack.com/p/improvements-to-the-separating-axis">other post about the Separating Axis Test</a>.</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>P. Wolfe, “Finding the nearest point in a polytope,” Math. Programming, vol.&nbsp;11, pp.&nbsp;128-149, 1976.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Keerthi is on LinkedIn; maybe someone should ask him :-)<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>To be clear, game developers are certainly aware that collision detection of separated shapes is a convex optimization problem, but I have not seen any discussion of FW.<br>
+<br>
+Christer Ericson <a href="https://x.com/ChristerEricson/status/1947381763455782981">tweeted</a> that game programmers probably were not aware GJK was derived from FW at the time of writing Real Time Collision Detection.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>The classic book <a href="https://www.r-5.org/files/books/computers/algo-list/game-development/Gino_van_den_Bergen-Collision_Detection_in_Interactive_3D_Environments-EN.pdf">Collision Detection in Interactive 3D Environments</a> by Gino van den Bergen does mention it briefly on page 122.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Casey’s video is so well-regarded that Havok (widely considered the leading physics engine) includes it in its new-hire training.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/cairnc\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

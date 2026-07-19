@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Cairn O">
+<meta name="dcterms.date" content="2025-07-09">
+<meta name="description" content="A faster Separating Axis Test based on traversing the Gauss map and incrementally updating support vertices.">
+
+<title>Improvements to the Separating Axis Test – Cairn Overturf’s Blog</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-6388ad00bb6ecaefa25b9a98db1edf18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Improvements to the Separating Axis Test – Cairn Overturf’s Blog">
+<meta property="og:description" content="A faster Separating Axis Test based on traversing the Gauss map and incrementally updating support vertices.">
+<meta property="og:image" content="https://cairnc.github.io/posts/improvements-to-the-separating-axis/images/figure-01.png">
+<meta property="og:site_name" content="Cairn Overturf’s Blog">
+<meta property="og:image:height" content="637">
+<meta property="og:image:width" content="998">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Cairn Overturf’s Blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#collision-detection-formalization" id="toc-collision-detection-formalization" class="nav-link active" data-scroll-target="#collision-detection-formalization">Collision Detection Formalization</a>
+  <ul class="collapse">
+  <li><a href="#no-overlap-case" id="toc-no-overlap-case" class="nav-link" data-scroll-target="#no-overlap-case">No Overlap Case</a></li>
+  <li><a href="#overlap-case" id="toc-overlap-case" class="nav-link" data-scroll-target="#overlap-case">Overlap Case</a></li>
+  </ul></li>
+  <li><a href="#solving-the-overlap-problem" id="toc-solving-the-overlap-problem" class="nav-link" data-scroll-target="#solving-the-overlap-problem">Solving The Overlap Problem</a>
+  <ul class="collapse">
+  <li><a href="#overlap-problem-for-convex-polyhedra" id="toc-overlap-problem-for-convex-polyhedra" class="nav-link" data-scroll-target="#overlap-problem-for-convex-polyhedra">Overlap Problem for Convex Polyhedra</a>
+  <ul class="collapse">
+  <li><a href="#example-in-2d" id="toc-example-in-2d" class="nav-link" data-scroll-target="#example-in-2d">Example in 2D</a></li>
+  <li><a href="#general-case-in-3d" id="toc-general-case-in-3d" class="nav-link" data-scroll-target="#general-case-in-3d">General case in 3D</a></li>
+  <li><a href="#optimized-sat-test" id="toc-optimized-sat-test" class="nav-link" data-scroll-target="#optimized-sat-test">Optimized SAT Test</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Improvements to the Separating Axis Test</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">collision detection</div>
+    <div class="quarto-category">optimization</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    A faster Separating Axis Test based on traversing the Gauss map and incrementally updating support vertices.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Cairn O </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 9, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This article will assume some familiarity with narrow phase collision detection methods and associated geometric concepts such as the Minkowski sum.</p>
+<p>A few years ago I was watching Dirk’s great presentation, The Separating Axis Test between Convex Polyhedra (<a href="https://gdcvault.com/play/1017646/Physics-for-Game-Programmers-The">video</a>, <a href="https://media.gdcvault.com/gdc2013/slides/822403Gregorius_Dirk_TheSeparatingAxisTest.pdf">slides</a>). Around the 18 minute mark (slide 29) he starts talking about overlaying Gauss maps of convex polyhedra to find the faces of their Minkowski difference.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-01.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 1: A gauss map for two convex hulls
+</figcaption>
+</figure>
+<p>The upshot is that all faces of the minkowski difference are either:</p>
+<ol type="1">
+<li><p>A face of shape <span class="math inline">\(\boldsymbol{A}\)</span></p></li>
+<li><p>A face of shape <span class="math inline">\(\boldsymbol{B}\)</span></p></li>
+<li><p>A cross product of an edge from <span class="math inline">\(\boldsymbol{A}\)</span> and an edge from <span class="math inline">\(\boldsymbol{B}\)</span></p></li>
+</ol>
+<p>And most importantly, you can avoid a costly full support function evaluation in case #3 because you know a vertex that lies on the face. After letting that fact sink, I wondered — why can’t we skip the support function evaluation for all the points on the Gauss map? Turns out you can, the result is a version of the separating axis test that requires only one full support function evaluation as opposed to FaceCountA+FaceCountB. Before we get to the details, let’s back up a bit.</p>
+<p>TLDR: <a href="https://github.com/cairnc/sat_blog/tree/main">Github repo</a></p>
+<section id="collision-detection-formalization" class="level1">
+<h1>Collision Detection Formalization</h1>
+<p>Let A and B be two bounded convex sets in <strong><span class="math inline">\(\mathbb{R}^{3}\)</span></strong>. There are two scenarios:</p>
+<ol type="1">
+<li><p>No overlap — We want the closest point between the two sets.</p></li>
+<li><p>Overlap — We want to find the minimum translation we can apply to separate the shapes.</p></li>
+</ol>
+<p>Let’s describe each case more formally and discuss solvers that are appropriate.</p>
+<section id="no-overlap-case" class="level2">
+<h2 class="anchored" data-anchor-id="no-overlap-case">No Overlap Case</h2>
+<p>Suppose <span class="math inline">\(\boldsymbol{A}\)</span> and <span class="math inline">\(\boldsymbol{B}\)</span> are disjoint sets. The closest pair of points, one from each set, is the pair that minimizes the distance between them. The following formulations are equivalent.</p>
+<p><span class="math display">\[\begin{align}
+\operatorname{dist}(A,B)^2
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{x,y} \lVert x-y\rVert^2 \\
+       &amp;x \in A \\
+       &amp;y \in B
+     \end{aligned}
+  \tag{1} \\[0.5em]
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{x,y} d \\
+       &amp;d \geq \lVert x-y\rVert^2 \\
+       &amp;x \in A \\
+       &amp;y \in B
+     \end{aligned}
+  \tag{2} \\[0.5em]
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{d,z} d \\
+       &amp;d \geq \lVert z\rVert^2 \\
+       &amp;z \in A-B
+     \end{aligned}
+  \tag{3}
+\end{align}\]</span> Notice that the Minkowski difference shows up in the last formulation. Since all of these formulations are convex, iterative convex solvers<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> should <em>quickly</em> converge to the global solution. A discussion of non-GJK solvers in games deserves its own post. For the rest of this one, I’ll focus on the overlapping case.</p>
+</section>
+<section id="overlap-case" class="level2">
+<h2 class="anchored" data-anchor-id="overlap-case">Overlap Case</h2>
+<p>Suppose <span class="math inline">\(\boldsymbol{A}\)</span> and <span class="math inline">\(\boldsymbol{B}\)</span> are intersecting. To push the sets apart we must find a direction <span class="math inline">\(\boldsymbol{v}\)</span> and a distance <span class="math inline">\(\boldsymbol{s}\)</span> such that the translated set <span class="math inline">\(\boldsymbol{(B+s\cdot v)}\)</span> has no intersection with <span class="math inline">\(\boldsymbol{A}\)</span>.</p>
+<p><span class="math display">\[\begin{align}
+s^\star
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{s,v} s \\
+       &amp;\lVert v\rVert = 1 \\
+       &amp;(y+s v) \cdot v \geq x \cdot v,
+         \quad \forall x \in A,\ \forall y \in B
+     \end{aligned}
+  \tag{5} \\[0.5em]
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{s,v} s \\
+       &amp;\lVert v\rVert = 1 \\
+       &amp;(y-x) \cdot v \geq -s,
+         \quad \forall x \in A,\ \forall y \in B
+     \end{aligned}
+  \tag{6} \\[0.5em]
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{s,v} s \\
+       &amp;\lVert v\rVert = 1 \\
+       &amp;z \cdot v \leq s,
+         \quad \forall z \in A-B
+     \end{aligned}
+  \tag{7} \\[0.5em]
+  &amp;= \begin{aligned}[t]
+       &amp;\min_{s,v} s \\
+       &amp;\lVert v\rVert = 1 \\
+       &amp;\operatorname{supp}(A-B,v) \leq s
+     \end{aligned}
+  \tag{8} \\[0.5em]
+  &amp;= \min_{\lVert v\rVert=1} \operatorname{supp}(A-B,v)
+  \tag{9}
+\end{align}\]</span> This problem is not convex due to the quadratic equality constraint <span class="math inline">\(\boldsymbol{|v|=1}\)</span>. For the support functions we care about, this problem can be classified as a non-convex quadratically constrained quadratic program (<a href="https://en.wikipedia.org/wiki/Quadratically_constrained_quadratic_program">QCQP</a>). Geometrically, we are minimising a function on the surface of a sphere — much like searching for the lowest elevation on Earth</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-02.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 2: A spherical plot of the support function of a translated unit cube
+</figcaption>
+</figure>
+<p>Hopefully it is clear from the plot above that an iterative solver is not guaranteed to find the global minimum<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. Now that we have some language to talk about this optimization problem, the rest of the article will focus on solving this problem and specifically, a variant of the SAT algorithm.</p>
+</section>
+</section>
+<section id="solving-the-overlap-problem" class="level1">
+<h1>Solving The Overlap Problem</h1>
+<p>So far, we were able to formulate our problems without relying on any specialized geometry knowledge about Minkowski differences, support functions, Gauss maps, etc. The Minkowski difference and support function appeared naturally in the final formulation, but I intentionally did not want to dwell on them. My goal with this article is to show that this can be modelled as <em>just another optimization problem</em> without using too much hard earned geometry knowledge. I find this is often a good strategy for solving advanced math problems in games<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. Start from the most abstract, general version of the problem, and aggressively optimize your solution for the specific case you’re dealing with.</p>
+<p>In this case, we are optimizing a function on the unit sphere — formulation (9). So what properties of our objective function can we take advantage of? The objective function is</p>
+<p><span class="math display">\[\begin{align*}
+  f(v) &amp;= \max_{z \in C} (z \cdot v) \\
+  \text{where}\qquad C &amp;= A-B
+\end{align*}\]</span> Here are some questions we can ask ourselves</p>
+<ul>
+<li><p>Is <span class="math inline">\(\boldsymbol{f}\)</span> differentiable?</p></li>
+<li><p>Is <span class="math inline">\(\boldsymbol{f}\)</span> fast to compute?</p></li>
+<li><p>If we just computed <span class="math inline">\(\boldsymbol{f(v)}\)</span> can we compute <span class="math inline">\(\boldsymbol{f(v+e)}\)</span> quickly for small <span class="math inline">\(\boldsymbol{e}\)</span></p></li>
+<li><p>etc</p></li>
+</ul>
+<p>The optimal solver will look different depending on the answers to these questions. In this case, the answers depend on the set <span class="math inline">\(\boldsymbol{C}\)</span>, e.g.&nbsp;if <span class="math inline">\(\boldsymbol{C}\)</span> is a ball then our minimization problem is solvable analytically. I began this post talking about convex polyhedra so we are finally getting to the meat and potatoes.</p>
+<section id="overlap-problem-for-convex-polyhedra" class="level2">
+<h2 class="anchored" data-anchor-id="overlap-problem-for-convex-polyhedra">Overlap Problem for Convex Polyhedra</h2>
+<p>For the rest of this post we will assume that <span class="math inline">\(\boldsymbol{C}\)</span> is a convex polyhedron defined as the convex hull of vertices <span class="math inline">\(\boldsymbol{c_{1}, c_{2}, \dots c_{n}}\)</span>.</p>
+<section id="example-in-2d" class="level3">
+<h3 class="anchored" data-anchor-id="example-in-2d">Example in 2D</h3>
+<p>To get our feet wet, let’s plot the support function for <span class="math inline">\(\boldsymbol{C}\)</span> defined by the following vertices</p>
+<p><span class="math display">\[\begin{equation*}
+\begin{aligned}
+  c_1 &amp;= \begin{bmatrix}-1.2 &amp; 1.8\end{bmatrix} &amp;
+  c_2 &amp;= \begin{bmatrix} 2 &amp; 2.8\end{bmatrix} \\
+  c_3 &amp;= \begin{bmatrix} 1 &amp; -0.7\end{bmatrix} &amp;
+  c_4 &amp;= \begin{bmatrix}-1 &amp; -0.2\end{bmatrix}
+\end{aligned}
+\end{equation*}\]</span> Below are plots of the polygon, a plot of the support function in <span class="math inline">\(\boldsymbol{\mathbb{R}^{2}}\)</span> and a cartesian plot of the support function on the circle, from <strong>0</strong> to <span class="math inline">\(\boldsymbol{2\pi}\)</span>.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-03.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 3: Plot of a convex polygon
+</figcaption>
+</figure>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-04.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 4: Plot of the support function in <span class="math inline">ℝ<sup>2</sup></span> with the values on the circle highlighted
+</figcaption>
+</figure>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-05.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 5: Cartesian plot of the support function
+</figcaption>
+</figure>
+<p>From the last two plots it is easy to extract a few useful properties about <span class="math inline">\(\boldsymbol{f(v)}\)</span>:</p>
+<ol type="1">
+<li><p>The function is differentiable except for a finite number of points where there are <em>kinks —</em> discontinuities in the first derivative.</p></li>
+<li><p>Each differentiable region corresponds to a vertex of our polygon and when constrained to that region, the function is concave. We will call these regions of the sphere vertex regions. Remember that <span class="math inline">\(\boldsymbol{C = A - B}\)</span> so each vertex region actually corresponds to a pair of vertices, one from <span class="math inline">\(\boldsymbol{A}\)</span> and one from <span class="math inline">\(\boldsymbol{B}\)</span>.</p></li>
+<li><p>From the definition of the support function, the kinks occur when e.g.&nbsp;when<br>
+<span class="math inline">\(\boldsymbol{c_{1} \cdot v = c_{2} \cdot v}\)</span>, which implies they occur at the point on the sphere satisfying<br>
+<span class="math inline">\(\boldsymbol{(c_{1} - c_{2}) \cdot v = 0}\)</span>. This means <span class="math inline">\(\boldsymbol{v}\)</span> must be perpendicular to the edge of the polygon. In other words the kinks occur at the face normals of <span class="math inline">\(\boldsymbol{C}\)</span>. This is also intuitive, imagine what happens as the support direction sweeps from one vertex to another. In the middle it will be perpendicular to the polygon face and the projection along that direction of both face vertices will be the same.</p></li>
+</ol>
+<p>These properties can be proven using definition of the support function if you want to be rigorous. From calculus, we know that the minimum of <span class="math inline">\(\boldsymbol{f(\theta)}\)</span> restricted to a vertex region must occur at the boundary. Then globally the minimum must occur at one of the kink points, this gives us a global solver. We simply evaluate <span class="math inline">\(\boldsymbol{f}\)</span> at all the kink points and pick the minimum value. In this example it is simple to enumerate the kinks because we specified all the vertices which can be used to derive the face normals. In practice we know the vertices of <span class="math inline">\(\boldsymbol{A}\)</span> and <span class="math inline">\(\boldsymbol{B}\)</span> and don’t explicitly construct <span class="math inline">\(\boldsymbol{C}\)</span>. However this is not a problem since <span class="math inline">\(\boldsymbol{\operatorname{supp}(A-B, v) = \operatorname{supp}(A, v) + \operatorname{supp}(B,-v)}\)</span> and the kink points of a sum of functions are the union of the kink points from the individual functions. So in practice we would evaluate <span class="math inline">\(\boldsymbol{f}\)</span> at all the normals of <span class="math inline">\(\boldsymbol{A}\)</span> and the normals of <span class="math inline">\(\boldsymbol{B}\)</span> and pick the minimum value. Hopefully you have realized that what we have discovered is the regular separating axis test in 2D. Notice that we didn’t do much geometry, we just used some basic calculus facts. This 2D case is very similar to the 3D case which we will look at next.</p>
+</section>
+<section id="general-case-in-3d" class="level3">
+<h3 class="anchored" data-anchor-id="general-case-in-3d">General case in 3D</h3>
+<p>In <span class="math inline">\(\boldsymbol{\mathbb{R}^{2}}\)</span> the discontinuities of the support function’s derivative were along lines passing through the origin and the intersection of the lines with the circle were points. In <span class="math inline">\(\boldsymbol{\mathbb{R}^{3}}\)</span> it shouldn’t be a stretch that the discontinuities of the support function lie within planes passing through the origin. Restricted to the sphere, these discontinuity sets form great-circle arcs</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-06.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 6: Intersection of planes with a sphere forming great circle. Source: <a href="https://en.wikipedia.org/wiki/Spherical_geometry">Wikipedia article on Spherical Geometry</a>
+</figcaption>
+</figure>
+<p>If we plot the discontinuities coming from both <span class="math inline">\(\boldsymbol{A}\)</span> and <span class="math inline">\(\boldsymbol{B}\)</span> we get a picture like I showed in the beginning of the article.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-07.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 7: Discontinuities in the derivative of <span class="math inline"><strong>supp</strong> <strong>(</strong><strong>A</strong> <strong>−</strong> <strong>B</strong><strong>,</strong> <strong>v</strong><strong>)</strong></span> constrained to the sphere
+</figcaption>
+</figure>
+<p>In the 3D case our objective function has similar properties to 2D:</p>
+<ol type="1">
+<li><p>The vertex region for <span class="math inline">\(\boldsymbol{c_{i}}\)</span> is bounded by <span class="math inline">\(\boldsymbol{K_{i}}\)</span> planes. The plane separating two neighboring vertex regions corresponding to <span class="math inline">\(\boldsymbol{c_{1}}\)</span> and <span class="math inline">\(\boldsymbol{c_{2}}\)</span> is defined by<br>
+<span class="math inline">\(\boldsymbol{(c_{1} - c_{2}) \cdot v = 0}\)</span>.</p></li>
+<li><p>The boundary curve for a vertex region has <span class="math inline">\(\boldsymbol{K_{i}}\)</span> discontinuities which are located at the face normals. The line of reasoning from 2D can be generalized to 3D. Since the face normals occur at intersections of geodesic arcs, we have that face normals are parallel or antiparallel to the cross product of any two nonparallel edges of the face.</p></li>
+<li><p>The minimum of <span class="math inline">\(\boldsymbol{f}\)</span> over a vertex region occurs at the face normals. A similar calculus argument can be used here. The min over the 2D portion occurs at its boundary. The min of the 1D portion occurs at its boundary.</p></li>
+<li><p>The global min can be found by enumerating all face normals (vertex region boundary kinks).</p></li>
+</ol>
+<p>From the last property above we get the separating axis test described by Dirk’s presentation. Namely, iterate over all face normals of the minkowski difference and calculate the projection. The important optimization that Dirk points out is that the new face normals formed by cross products can avoid a full support function evaluation because you know a vertex that lies on the face of the Minkowski difference. We can take this idea further and save the support function evaluation for all face normals (except one) because it should be clear that we can determine neighboring vertex regions for each face normal.</p>
+</section>
+<section id="optimized-sat-test" class="level3">
+<h3 class="anchored" data-anchor-id="optimized-sat-test">Optimized SAT Test</h3>
+<p>Here’s the main idea. Traverse the arcs on the sphere using a graph traversal algorithm and as you traverse keep track of the support point for each region. In more detail</p>
+<ol type="1">
+<li><p>Pick a point <span class="math inline">\(\boldsymbol{w}\)</span> on one of the arc end points in figure (7) and calculate the vertex region you are in <span class="math inline">\(\boldsymbol{A}\)</span> and <span class="math inline">\(\boldsymbol{-B}\)</span>. I.e. calculate <span class="math inline">\(\boldsymbol{\operatorname{supp}(A,w)}\)</span> and <span class="math inline">\(\boldsymbol{\operatorname{supp}(-B,w)}\)</span> and keep track of the vertices <span class="math inline">\(\boldsymbol{a, b}\)</span>.</p></li>
+<li><p>Follow the arc and as you move across the sphere keep track of which other arcs you intersect. Every time you hit an arc you enter into a new vertex region.</p></li>
+<li><p>Every intersection or endpoint <span class="math inline">\(\boldsymbol{w}\)</span> you traverse is a face normal and the support function is simply <span class="math inline">\(\boldsymbol{w \cdot (a - b)}\)</span></p></li>
+</ol>
+<p>Let us consider a concrete example using the diagram below. Denote the face normals by greek letters with <span class="math inline">\(\boldsymbol{\alpha_{i}}\)</span>, <span class="math inline">\(\boldsymbol{\beta_{i}}\)</span> and <span class="math inline">\(\boldsymbol{\gamma_{i}}\)</span> corresponding to the face normals of <span class="math inline">\(\boldsymbol{A}\)</span>, <span class="math inline">\(\boldsymbol{-B}\)</span> and the new face normals of <span class="math inline">\(\boldsymbol{A-B}\)</span> respectively. Similarly, the latin alphabet is used to denote the vertex regions of <span class="math inline">\(\boldsymbol{A}\)</span> and <span class="math inline">\(\boldsymbol{-B}\)</span>. That is, if <span class="math inline">\(\boldsymbol{G}\)</span> is the intersection of regions labeled <span class="math inline">\(\boldsymbol{a_{1 }}\)</span> and <span class="math inline">\(\boldsymbol{b_{2 }}\)</span> then</p>
+<p><span class="math display">\[\begin{equation}
+\tag{10}
+  \operatorname{supp}(A-B,v) = (a_1-b_2) \cdot v,
+  \qquad \text{for all } v \in G
+\end{equation}\]</span></p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="images/figure-08.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 8: Labeled Gauss Map
+</figcaption>
+</figure>
+<p>Here are the first few iterations of the example</p>
+<ol type="1">
+<li><p>Start at <span class="math inline">\(\boldsymbol{\alpha_{1 }}\)</span> arbitrarily and calculate the the vertex region <span class="math inline">\(\boldsymbol{b_{1}}\)</span> using a full evaluation of the support function of <span class="math inline">\(\boldsymbol{B}\)</span>. We know that we are also in <span class="math inline">\(\boldsymbol{a_{1}}\)</span> for free. Record<br>
+<span class="math inline">\(\boldsymbol{f(\alpha_{1}) = \alpha_{1} \cdot (a_{1} - b_{1})}\)</span>.</p></li>
+<li><p>Begin traversing the arc from <span class="math inline">\(\boldsymbol{\alpha_{1 }}\)</span> to <span class="math inline">\(\boldsymbol{\alpha_{2 }}\)</span> and find that you intersect the arc<br>
+between <span class="math inline">\(\boldsymbol{\beta_{1 }}\)</span> and <span class="math inline">\(\boldsymbol{\beta_{3 }}\)</span> , the intersection point is <span class="math inline">\(\boldsymbol{\gamma_{4}}\)</span>. Record <span class="math inline">\(\boldsymbol{f(\gamma_{4}) = \gamma_{4} \cdot (a_{1} - b_{1})}\)</span>.</p></li>
+<li><p>Passing through the plane in the previous step moved you move from region <span class="math inline">\(\boldsymbol{b_{1}}\)</span> to region <span class="math inline">\(\boldsymbol{b_{2}}\)</span>. Keep moving from <span class="math inline">\(\boldsymbol{\gamma_{4 }}\)</span> to <span class="math inline">\(\boldsymbol{\gamma_{3 }}\)</span> and record <span class="math inline">\(\boldsymbol{f(\gamma_{3}) = \gamma_{3} \cdot (a_{1} - b_{2})}\)</span></p></li>
+<li><p>Continue on moving from <span class="math inline">\(\boldsymbol{\gamma_{3 }}\)</span> to <span class="math inline">\(\boldsymbol{\alpha_{2 }}\)</span> . Since we intersected another plane defined by the arc between <span class="math inline">\(\boldsymbol{\beta_{2 }}\)</span> and <span class="math inline">\(\boldsymbol{\beta_{3 }}\)</span> we will update our vertex region to <span class="math inline">\(\boldsymbol{b_{3}}\)</span> . Record <span class="math inline">\(\boldsymbol{f(\alpha_{2}) = \alpha_{2} \cdot (a_{1} - b_{3})}\)</span>.</p></li>
+<li><p>Continue this process until all arcs of <span class="math inline">\(\boldsymbol{A}\)</span> have been traversed.</p></li>
+</ol>
+<p>That is pretty much the whole idea. There are a lot of important implementation details like what data structures to use and how to implement arc tracing and intersection tests but this post is already getting too long. If you are curious about the nitty gritty details you can browse the code linked at the beginning and end of the article. In broad strokes these are some of the must haves</p>
+<p>Use some variant of a <strong>half edge data structure</strong>. You need as much topological information you can get. For each vertex I store a flat array of all its connected edges. For each edge I also store the face on each side of the edge.</p>
+<p><code>{.c++ language="C++"} struct Edge  {      uint8_t vert0, vert1;     uint8_t face0, face1;  };</code></p>
+<p><strong>Sort hull edges topologically</strong> by arc connectivity so that during traversal every new arc you traverse you know you have already started or terminated at it.</p>
+<p><strong>Ensure your hull builder produces high quality hull</strong>s. Like the regular separating axis test, this algorithm is sensitive to the quality of the hull. However I haven’t noticed any numerical issues so far that are any worse than regular SAT.</p>
+</section>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>We’ve covered a different way to look at the Separating Axis Test, not as a purely geometric algorithm, but as an optimization problem on a sphere. By analyzing the properties of the support function, we found its minimum must lie on the "kinks" formed by the intersection of great circles on a Gauss map.</p>
+<p>The key insight is that this map is just a graph that we can incrementally traverse. Instead of re-calculating the support function at each node (face normal), we can perform one initial calculation and then traverse the graph, updating the support vertex cheaply as we cross the boundaries (arcs) into new regions. This is essentially the same support function optimization that many physics engines call hill climbing.</p>
+<p>If you want to see it in action, I’ve put together a demo for Visual Studio on Windows where you can compare the two methods and visualize gauss maps. In my testing, this graph-traversal approach is 5-10x faster than the regular SAT for convex hulls with many faces. For hull vs triangle the speed up is ~1.2x due to fewer edge cross products. Additionally, the version of the algorithm implemented in the demo has some numerical problems with triangles. I’m not sure if it’s due to contact generation or collision detection. This problem is completely fixable and I had it working at some point but the branch seems to be lost to the sands of time. Hopefully I can find some time to get it working again.</p>
+<p>I discovered this traversal method independently, but as with most problems in computational geometry, it was probably first solved by someone in the 70s. If this algorithm has a name or if you know of any games that use a similar technique, please let me know! I’d love to learn more about its history.</p>
+<p><a href="https://github.com/cairnc/sat_blog/tree/main">Github repo</a></p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">GJK</a> is one of the most popular iterative solver but any convex optimization algorithm should work. Iterative methods can also be warm started like GJK using previous solutions. There are a plethora of iterative convex solvers, examples include <a href="https://en.wikipedia.org/wiki/Frank%E2%80%93Wolfe_algorithm">interior-point methods</a>, <a href="https://en.wikipedia.org/wiki/Mirror_descent">gradient descent methods</a>, <a href="https://en.wikipedia.org/wiki/Ellipsoid_method">the ellipsoid method</a>, <a href="https://en.wikipedia.org/wiki/Convex_optimization">etc</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>However <span class="math inline">\(\boldsymbol{f(v)}\)</span> constrained to the sphere becomes better behaved as origin moves closer to the hull boundary. Below is a cross section of the support function of the unit cube as it is shifted away from the origin. Notice that the support functions starts to look convex away from 0 radians.</p>
+<div class="center">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/figure-09.png" class="img-fluid figure-img" style="width:90.0%"></p>
+<figcaption>image</figcaption>
+</figure>
+</div>
+</div>
+<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></li>
+<li id="fn3"><p>A philosophy I learned from Chris Hecker’s great GDC lecture <em><a href="https://chrishecker.com/The_Mixed_Linear_Complementarity_Problem">Lemke’s Algorithm: The Hammer in Your Math Toolbox</a></em><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/cairnc\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
