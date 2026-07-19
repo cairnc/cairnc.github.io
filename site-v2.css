@@ -7,6 +7,41 @@
   max-width: 900px;
 }
 
+/* Keep post headers minimal: title and publication date only. */
+#title-block-header .quarto-categories,
+#title-block-header .description,
+#title-block-header .quarto-title-meta > div {
+  display: none;
+}
+
+#title-block-header .quarto-title h1.title {
+  margin-bottom: 0;
+}
+
+#title-block-header .quarto-title-meta {
+  display: block;
+  margin-top: 0.65rem;
+}
+
+#title-block-header .quarto-title-meta > div:last-child {
+  display: block;
+}
+
+#title-block-header .quarto-title-meta-heading {
+  display: none;
+}
+
+#title-block-header .quarto-title-meta-contents p.date {
+  color: var(--bs-secondary-color);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* The homepage listing contains titles only, so remove the empty metadata rail. */
+.quarto-listing .quarto-post .metadata {
+  display: none;
+}
+
 .math.display {
   overflow-x: auto;
   overflow-y: hidden;
