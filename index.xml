@@ -287,25 +287,25 @@ font-style: inherit;">};</span></span></code></pre></div></div>
 <p>If you want to see it in action, I’ve put together a demo for Visual Studio on Windows where you can compare the two methods and visualize gauss maps. In my testing, this graph-traversal approach is 5-10x faster than the regular SAT for convex hulls with many faces. For hull vs triangle the speed up is ~1.2x due to fewer edge cross products. Additionally, the version of the algorithm implemented in the demo has some numerical problems with triangles. I’m not sure if it’s due to contact generation or collision detection. This problem is completely fixable and I had it working at some point but the branch seems to be lost to the sands of time. Hopefully I can find some time to get it working again.</p>
 <p>I discovered this traversal method independently, but as with most problems in computational geometry, it was probably first solved by someone in the 70s. If this algorithm has a name or if you know of any games that use a similar technique, please let me know! I’d love to learn more about its history.</p>
 <p><a href="https://github.com/cairnc/sat_blog/tree/main">Github repo</a></p>
-<section class="substack-comments" aria-labelledby="earlier-discussion">
+<section class="archived-comments" aria-labelledby="earlier-discussion">
 <h2 id="earlier-discussion" class="anchored" data-anchor-id="conclusion">
 Earlier discussion
 </h2>
-<p class="substack-comments-note">
+<p class="archived-comments-note">
 9 archived comments.
 </p>
-<div class="substack-comment-list">
-<div class="substack-comment">
+<div class="archived-comment-list">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Erwin Coumans</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Erwin Coumans</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-25T03:30:53.430Z">July 25, 2025</time><span class="substack-edited-badge">Edited</span>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-25T03:30:53.430Z">July 25, 2025</time><span class="archived-edited-badge">Edited</span>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 Are you writing a new physics engine?
 </p>
@@ -314,18 +314,18 @@ Btw, did you know we started the Newton physics effort, with various companies? 
 </p>
 </div>
 </article>
-<div class="substack-replies">
-<div class="substack-comment">
+<div class="archived-replies">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Cairn O</span><span class="archived-author-badge">Author</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-25T03:55:46.423Z">July 25, 2025</time>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-25T03:55:46.423Z">July 25, 2025</time>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 I have a project that I am working on as a hobby. I'd like to blog about it eventually.
 </p>
@@ -337,17 +337,17 @@ I did see newton, very exciting time for physics programmers!
 </div>
 </div>
 </div>
-<div class="substack-comment">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Erwin Coumans</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Erwin Coumans</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-25T03:19:54.294Z">July 25, 2025</time><span class="substack-edited-badge">Edited</span>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-25T03:19:54.294Z">July 25, 2025</time><span class="archived-edited-badge">Edited</span>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 Thanks for the interesting article. It is hard to beat brute force SIMD code with anything complex for small problems.I recall hillclimbing, but for smallish convexes brute force SIMD was fastest. In Bullet we use this, but that code is ancient now:
 </p>
@@ -356,18 +356,18 @@ Thanks for the interesting article. It is hard to beat brute force SIMD code wit
 </p>
 </div>
 </article>
-<div class="substack-replies">
-<div class="substack-comment">
+<div class="archived-replies">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Cairn O</span><span class="archived-author-badge">Author</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-25T03:26:13.986Z">July 25, 2025</time>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-25T03:26:13.986Z">July 25, 2025</time>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 Thanks for sharing! Yeah the traversal part can't benefit from SIMD but the "portal" intersection can. Very similar to using SIMD for dot products.
 </p>
@@ -379,17 +379,17 @@ Thanks for sharing! Yeah the traversal part can't benefit from SIMD but the "por
 </div>
 </div>
 </div>
-<div class="substack-comment">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Sergiy Migdalskiy</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Sergiy Migdalskiy</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-11T16:10:43.342Z">July 11, 2025</time>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-11T16:10:43.342Z">July 11, 2025</time>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 Hi, I'm the author of the SAT chapter in Physics Pearls book.
 </p>
@@ -407,18 +407,18 @@ It'd be very humbling to find out I was wrong and there is a fast algorithm to f
 </p>
 </div>
 </article>
-<div class="substack-replies">
-<div class="substack-comment">
+<div class="archived-replies">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Cairn O</span><span class="archived-author-badge">Author</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-11T17:20:11.203Z">July 11, 2025</time><span class="substack-edited-badge">Edited</span>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-11T17:20:11.203Z">July 11, 2025</time><span class="archived-edited-badge">Edited</span>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 Hello Sergiy, thank you for the history. I have not read physics pearls but I learned alot from your valve presentation.
 </p>
@@ -444,18 +444,18 @@ Also don't ask me why it is in C
 </p>
 </div>
 </article>
-<div class="substack-replies">
-<div class="substack-comment">
+<div class="archived-replies">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Cairn O</span><span class="archived-author-badge">Author</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-11T17:55:19.392Z">July 11, 2025</time><span class="substack-edited-badge">Edited</span>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-11T17:55:19.392Z">July 11, 2025</time><span class="archived-edited-badge">Edited</span>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 I will leave this code but I just realized this is also not quite the right version. This version still does all the full support function evaluations for the faces normals of A. To remove this, as you trace the edges of B every arc you hit you save the min dot product from your origin vertex region. I.e. you relax the values of the support function for A's face normals. Since every face normal of A is contained in a vertex region of B, traversing all the arcs of B will mean that you've computed the dot product of a face in A with a vertex from its MD.
 </p>
@@ -467,18 +467,18 @@ I'll leave it there and keep looking for the code. I'll include a more detailed 
 </p>
 </div>
 </article>
-<div class="substack-replies">
-<div class="substack-comment">
+<div class="archived-replies">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Cairn O</span><span class="archived-author-badge">Author</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-11T20:43:48.390Z">July 11, 2025</time><span class="substack-edited-badge">Edited</span>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-11T20:43:48.390Z">July 11, 2025</time><span class="archived-edited-badge">Edited</span>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 I updated the code in github to use the correct algorithm. I could not find the code so I tried to reimplement it from memory. It seems to be working…
 </p>
@@ -496,18 +496,18 @@ In any case, it is yet to be seen whether its SIMDized version is better than a 
 </p>
 </div>
 </article>
-<div class="substack-replies">
-<div class="substack-comment">
+<div class="archived-replies">
+<div class="archived-comment">
 <article>
-<header class="substack-comment-header">
-<div class="substack-comment-identity">
-<span class="substack-comment-author">Sergiy Migdalskiy</span>
+<header class="archived-comment-header">
+<div class="archived-comment-identity">
+<span class="archived-comment-author">Sergiy Migdalskiy</span>
 </div>
-<div class="substack-comment-meta">
-<time class="substack-comment-date" datetime="2025-07-12T23:58:40.452Z">July 12, 2025</time>
+<div class="archived-comment-meta">
+<time class="archived-comment-date" datetime="2025-07-12T23:58:40.452Z">July 12, 2025</time>
 </div>
 </header>
-<div class="substack-comment-body">
+<div class="archived-comment-body">
 <p>
 Thanks for sharing the code!
 </p>

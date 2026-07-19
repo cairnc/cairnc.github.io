@@ -23,46 +23,46 @@ figcaption {
   text-align: center;
 }
 
-.substack-comments {
+.archived-comments {
   border-top: 1px solid var(--bs-border-color);
   margin-top: 3rem;
   padding-top: 1.5rem;
 }
 
-.giscus + .substack-comments {
+.giscus + .archived-comments {
   margin-top: 2rem;
 }
 
-.substack-comments-note {
+.archived-comments-note {
   color: var(--bs-secondary-color);
   font-size: 0.95rem;
 }
 
-.substack-comment-list,
-.substack-replies {
+.archived-comment-list,
+.archived-replies {
   padding-left: 0;
 }
 
-.substack-comment-list {
+.archived-comment-list {
   margin: 1.75rem 0 0;
 }
 
-.substack-comment {
+.archived-comment {
   margin: 0 0 1.5rem;
 }
 
-.substack-comment article {
+.archived-comment article {
   border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
   padding: 1rem 1.1rem;
 }
 
-.substack-replies {
+.archived-replies {
   margin: 1rem 0 0 1.25rem;
   padding-left: 1rem;
 }
 
-.substack-comment-header {
+.archived-comment-header {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -71,32 +71,32 @@ figcaption {
   margin-bottom: 0.75rem;
 }
 
-.substack-comment-identity,
-.substack-comment-meta {
+.archived-comment-identity,
+.archived-comment-meta {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem 0.6rem;
 }
 
-.substack-comment-meta {
+.archived-comment-meta {
   color: var(--bs-secondary-color);
   font-size: 0.825rem;
   margin-left: auto;
 }
 
-.substack-comment-author {
+.archived-comment-author {
   color: inherit;
   font-weight: 700;
   text-decoration: none;
 }
 
-.substack-comment-date {
+.archived-comment-date {
   white-space: nowrap;
 }
 
-.substack-author-badge,
-.substack-edited-badge {
+.archived-author-badge,
+.archived-edited-badge {
   border: 1px solid var(--bs-border-color);
   border-radius: 999px;
   color: var(--bs-secondary-color);
@@ -105,26 +105,26 @@ figcaption {
   text-transform: uppercase;
 }
 
-.substack-comment-body > :last-child {
+.archived-comment-body > :last-child {
   margin-bottom: 0;
 }
 
-.substack-comment-body a {
+.archived-comment-body a {
   overflow-wrap: anywhere;
 }
 
 @media (max-width: 575.98px) {
-  .substack-replies {
+  .archived-replies {
     margin-left: 0.4rem;
     padding-left: 0.65rem;
   }
 
-  .substack-comment-header {
+  .archived-comment-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .substack-comment-meta {
+  .archived-comment-meta {
     margin-left: 0;
   }
 }
