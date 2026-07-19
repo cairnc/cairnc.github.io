@@ -37,9 +37,86 @@
   margin: 0;
 }
 
-/* The homepage listing contains titles only, so remove the empty metadata rail. */
-.quarto-listing .quarto-post .metadata {
-  display: none;
+/* Compact year/title/date archive for the posts index. */
+.posts-index main.content {
+  column-gap: 2rem;
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  max-width: 780px;
+}
+
+.posts-index #title-block-header {
+  grid-column: 1 / -1;
+  margin-bottom: 2.5rem;
+}
+
+.posts-index .post-archive-year {
+  color: var(--bs-secondary-color);
+  font-size: 1.5rem;
+  grid-column: 1;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.posts-index .post-archive-year p {
+  margin: 0;
+}
+
+.posts-index .quarto-listing {
+  grid-column: 2;
+}
+
+.posts-index .quarto-listing .quarto-post {
+  align-items: baseline;
+  border-bottom: 1px dashed var(--bs-border-color);
+  flex-direction: row !important;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.7rem 0;
+}
+
+.posts-index .quarto-listing .quarto-post:first-child {
+  padding-top: 0;
+}
+
+.posts-index .quarto-listing .quarto-post .body {
+  flex: 1 1 auto;
+  min-width: 0;
+  order: 1;
+}
+
+.posts-index .quarto-listing .quarto-post .metadata {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0;
+  order: 2;
+  padding: 0;
+}
+
+.posts-index .quarto-listing .listing-title {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.posts-index .quarto-listing .listing-date {
+  color: var(--bs-secondary-color);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .posts-index main.content {
+    display: block;
+  }
+
+  .posts-index #title-block-header {
+    margin-bottom: 2rem;
+  }
+
+  .posts-index .post-archive-year {
+    margin-bottom: 1rem;
+  }
 }
 
 .math.display {
