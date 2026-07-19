@@ -75,7 +75,7 @@ Figure 2: Frank-Wolfe line search failing to converge after 100 iterations
 </ul>
 <p>I find this explanation of GJK far more intuitive (and easier to derive) than the purely geometric one popular online. It requires remembering only a few key ideas. Notice that we didn’t need the Minkowski difference or support functions except as notation, though understanding the geometry certainly helps. If my summary is unclear (highly likely), read the paper until it clicks. The authors explain the concepts very well and provide many useful references on active sets and related history.</p>
 <p>Thanks for reading!</p>
-<p>If you liked this post, you might like my <a href="https://cairno.substack.com/p/improvements-to-the-separating-axis">other post about the Separating Axis Test</a>.</p>
+<p>If you liked this post, you might like my <a href="../improvements-to-the-separating-axis/">other post about the Separating Axis Test</a>.</p>
 
 
 </section>
@@ -292,13 +292,18 @@ font-style: inherit;">};</span></span></code></pre></div></div>
 Earlier discussion
 </h2>
 <p class="substack-comments-note">
-These 9 comments originally appeared on <a href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comments">Substack</a>. Names, dates, edits, and reply relationships are preserved from the public thread.
+9 archived comments.
 </p>
-<ol class="substack-comment-list">
-<li class="substack-comment">
+<div class="substack-comment-list">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@erwincoumans">Erwin Coumans</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138691858"><time datetime="2025-07-25T03:30:53.430Z">July 25, 2025</time></a><span class="substack-edited-badge">Edited</span>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Erwin Coumans</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-25T03:30:53.430Z">July 25, 2025</time><span class="substack-edited-badge">Edited</span>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -309,11 +314,16 @@ Btw, did you know we started the Newton physics effort, with various companies? 
 </p>
 </div>
 </article>
-<ol class="substack-replies">
-<li class="substack-comment">
+<div class="substack-replies">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138696227"><time datetime="2025-07-25T03:55:46.423Z">July 25, 2025</time></a>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-25T03:55:46.423Z">July 25, 2025</time>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -324,13 +334,18 @@ I did see newton, very exciting time for physics programmers!
 </p>
 </div>
 </article>
-</li>
-</ol>
-</li>
-<li class="substack-comment">
+</div>
+</div>
+</div>
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@erwincoumans">Erwin Coumans</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138689917"><time datetime="2025-07-25T03:19:54.294Z">July 25, 2025</time></a><span class="substack-edited-badge">Edited</span>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Erwin Coumans</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-25T03:19:54.294Z">July 25, 2025</time><span class="substack-edited-badge">Edited</span>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -341,11 +356,16 @@ Thanks for the interesting article. It is hard to beat brute force SIMD code wit
 </p>
 </div>
 </article>
-<ol class="substack-replies">
-<li class="substack-comment">
+<div class="substack-replies">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138691048"><time datetime="2025-07-25T03:26:13.986Z">July 25, 2025</time></a>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-25T03:26:13.986Z">July 25, 2025</time>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -356,13 +376,18 @@ Thanks for sharing! Yeah the traversal part can't benefit from SIMD but the "por
 </p>
 </div>
 </article>
-</li>
-</ol>
-</li>
-<li class="substack-comment">
+</div>
+</div>
+</div>
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@sergiymigdalskiy">Sergiy Migdalskiy</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134273250"><time datetime="2025-07-11T16:10:43.342Z">July 11, 2025</time></a>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Sergiy Migdalskiy</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-11T16:10:43.342Z">July 11, 2025</time>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -382,11 +407,16 @@ It'd be very humbling to find out I was wrong and there is a fast algorithm to f
 </p>
 </div>
 </article>
-<ol class="substack-replies">
-<li class="substack-comment">
+<div class="substack-replies">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134296047"><time datetime="2025-07-11T17:20:11.203Z">July 11, 2025</time></a><span class="substack-edited-badge">Edited</span>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-11T17:20:11.203Z">July 11, 2025</time><span class="substack-edited-badge">Edited</span>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -414,11 +444,16 @@ Also don't ask me why it is in C
 </p>
 </div>
 </article>
-<ol class="substack-replies">
-<li class="substack-comment">
+<div class="substack-replies">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134307029"><time datetime="2025-07-11T17:55:19.392Z">July 11, 2025</time></a><span class="substack-edited-badge">Edited</span>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-11T17:55:19.392Z">July 11, 2025</time><span class="substack-edited-badge">Edited</span>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -432,11 +467,16 @@ I'll leave it there and keep looking for the code. I'll include a more detailed 
 </p>
 </div>
 </article>
-<ol class="substack-replies">
-<li class="substack-comment">
+<div class="substack-replies">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134355672"><time datetime="2025-07-11T20:43:48.390Z">July 11, 2025</time></a><span class="substack-edited-badge">Edited</span>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Cairn O</span><span class="substack-author-badge">Author</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-11T20:43:48.390Z">July 11, 2025</time><span class="substack-edited-badge">Edited</span>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -456,11 +496,16 @@ In any case, it is yet to be seen whether its SIMDized version is better than a 
 </p>
 </div>
 </article>
-<ol class="substack-replies">
-<li class="substack-comment">
+<div class="substack-replies">
+<div class="substack-comment">
 <article>
 <header class="substack-comment-header">
-<a class="substack-comment-author" href="https://substack.com/@sergiymigdalskiy">Sergiy Migdalskiy</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134695992"><time datetime="2025-07-12T23:58:40.452Z">July 12, 2025</time></a>
+<div class="substack-comment-identity">
+<span class="substack-comment-author">Sergiy Migdalskiy</span>
+</div>
+<div class="substack-comment-meta">
+<time class="substack-comment-date" datetime="2025-07-12T23:58:40.452Z">July 12, 2025</time>
+</div>
 </header>
 <div class="substack-comment-body">
 <p>
@@ -477,16 +522,16 @@ But fundamentally, like you observed, it's a concave optimization problem. There
 </p>
 </div>
 </article>
-</li>
-</ol>
-</li>
-</ol>
-</li>
-</ol>
-</li>
-</ol>
-</li>
-</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 </section>
 
 
