@@ -28,6 +28,10 @@ figcaption {
   padding-top: 1.5rem;
 }
 
+.giscus + .substack-comments {
+  margin-top: 2rem;
+}
+
 .substack-comments-note {
   color: var(--bs-secondary-color);
   font-size: 0.95rem;

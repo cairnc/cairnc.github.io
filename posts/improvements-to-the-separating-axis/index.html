@@ -740,6 +740,51 @@ But fundamentally, like you observed, it's a concave optimization problem. There
 <li id="fn3"><p>A philosophy I learned from Chris Hecker’s great GDC lecture <em><a href="https://chrishecker.com/The_Mixed_Linear_Complementarity_Problem">Lemke’s Algorithm: The Hammer in Your Math Toolbox</a></em><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
+<script>
+(() => {
+  const archive = document.querySelector(".substack-comments");
+  const appendix = document.querySelector("#quarto-appendix");
+  const content = document.querySelector("#quarto-content");
+
+  if (!archive || !appendix || !content) {
+    return;
+  }
+
+  const main = appendix.closest("main");
+  let observer;
+
+  const arrangeComments = () => {
+    const githubComments = content.querySelector(".giscus");
+
+    if (githubComments && main) {
+      if (githubComments.parentElement !== main ||
+          githubComments.previousElementSibling !== appendix) {
+        appendix.after(githubComments);
+      }
+
+      if (archive.previousElementSibling !== githubComments) {
+        githubComments.after(archive);
+      }
+
+      observer?.disconnect();
+      return true;
+    }
+
+    if (archive.previousElementSibling !== appendix) {
+      appendix.after(archive);
+    }
+
+    return false;
+  };
+
+  observer = new MutationObserver(() => arrangeComments());
+
+  if (!arrangeComments()) {
+    observer.observe(content, { childList: true, subtree: true });
+    window.setTimeout(() => observer.disconnect(), 30000);
+  }
+})();
+</script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";

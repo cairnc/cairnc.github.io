@@ -289,6 +289,51 @@ Christer Ericson <a href="https://x.com/ChristerEricson/status/19473817634557829
 <li id="fn5"><p>Casey’s video is so well-regarded that Havok (widely considered the leading physics engine) includes it in its new-hire training.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
+<script>
+(() => {
+  const archive = document.querySelector(".substack-comments");
+  const appendix = document.querySelector("#quarto-appendix");
+  const content = document.querySelector("#quarto-content");
+
+  if (!archive || !appendix || !content) {
+    return;
+  }
+
+  const main = appendix.closest("main");
+  let observer;
+
+  const arrangeComments = () => {
+    const githubComments = content.querySelector(".giscus");
+
+    if (githubComments && main) {
+      if (githubComments.parentElement !== main ||
+          githubComments.previousElementSibling !== appendix) {
+        appendix.after(githubComments);
+      }
+
+      if (archive.previousElementSibling !== githubComments) {
+        githubComments.after(archive);
+      }
+
+      observer?.disconnect();
+      return true;
+    }
+
+    if (archive.previousElementSibling !== appendix) {
+      appendix.after(archive);
+    }
+
+    return false;
+  };
+
+  observer = new MutationObserver(() => arrangeComments());
+
+  if (!arrangeComments()) {
+    observer.observe(content, { childList: true, subtree: true });
+    window.setTimeout(() => observer.disconnect(), 30000);
+  }
+})();
+</script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
