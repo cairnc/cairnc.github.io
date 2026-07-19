@@ -251,7 +251,30 @@ between <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cbeta_%
 </ol>
 <p>That is pretty much the whole idea. There are a lot of important implementation details like what data structures to use and how to implement arc tracing and intersection tests but this post is already getting too long. If you are curious about the nitty gritty details you can browse the code linked at the beginning and end of the article. In broad strokes these are some of the must haves</p>
 <p>Use some variant of a <strong>half edge data structure</strong>. You need as much topological information you can get. For each vertex I store a flat array of all its connected edges. For each edge I also store the face on each side of the edge.</p>
-<p><code>{.c++ language="C++"} struct Edge  {      uint8_t vert0, vert1;     uint8_t face0, face1;  };</code></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">struct</span> Edge </span>
+<span id="cb1-2"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span> </span>
+<span id="cb1-3">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">uint8_t</span> vert0<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> vert1<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span></span>
+<span id="cb1-4">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">uint8_t</span> face0<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> face1<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">;</span> </span>
+<span id="cb1-5"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">};</span></span></code></pre></div></div>
 <p><strong>Sort hull edges topologically</strong> by arc connectivity so that during traversal every new arc you traverse you know you have already started or terminated at it.</p>
 <p><strong>Ensure your hull builder produces high quality hull</strong>s. Like the regular separating axis test, this algorithm is sensitive to the quality of the hull. However I haven’t noticed any numerical issues so far that are any worse than regular SAT.</p>
 </section>
