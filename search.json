@@ -14,6 +14,20 @@
     "text": "Footnotes\n\n\nP. Wolfe, “Finding the nearest point in a polytope,” Math. Programming, vol. 11, pp. 128-149, 1976.↩︎\nKeerthi is on LinkedIn; maybe someone should ask him :-)↩︎\nTo be clear, game developers are certainly aware that collision detection of separated shapes is a convex optimization problem, but I have not seen any discussion of FW.\n\nChrister Ericson tweeted that game programmers probably were not aware GJK was derived from FW at the time of writing Real Time Collision Detection.↩︎\nThe classic book Collision Detection in Interactive 3D Environments by Gino van den Bergen does mention it briefly on page 122.↩︎\nCasey’s video is so well-regarded that Havok (widely considered the leading physics engine) includes it in its new-hire training.↩︎"
   },
   {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "My name is Cairn. My day job is working on the Android compositor at Google but at night I am a wannabe gamedev. I plan to use this blog as a dumping ground for anything related to game programming, math, physics and OS development.\n\n\n\nLinkedIn\nTwitter\nGithub"
+  },
+  {
+    "objectID": "about.html#welcome-to-cairns-blog",
+    "href": "about.html#welcome-to-cairns-blog",
+    "title": "About",
+    "section": "",
+    "text": "My name is Cairn. My day job is working on the Android compositor at Google but at night I am a wannabe gamedev. I plan to use this blog as a dumping ground for anything related to game programming, math, physics and OS development.\n\n\n\nLinkedIn\nTwitter\nGithub"
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Cairn Overturf’s Blog",

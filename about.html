@@ -6,11 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Cairn O">
-<meta name="dcterms.date" content="2025-07-21">
-<meta name="description" content="An optimization-oriented explanation of GJK as a fully corrective Frank-Wolfe algorithm.">
 
-<title>PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe – Cairn Overturf’s Blog</title>
+<title>About – Cairn Overturf’s Blog</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -29,23 +26,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../../">
-<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../site_libs/quarto-html/popper.min.js"></script>
-<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-6388ad00bb6ecaefa25b9a98db1edf18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-6388ad00bb6ecaefa25b9a98db1edf18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -74,53 +71,21 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
-
-<link rel="stylesheet" href="../../site.css">
-<meta property="og:title" content="PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe – Cairn Overturf’s Blog">
-<meta property="og:description" content="An optimization-oriented explanation of GJK as a fully corrective Frank-Wolfe algorithm.">
-<meta property="og:image" content="https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/images/figure-01.png">
+<link rel="stylesheet" href="site.css">
+<meta property="og:title" content="About – Cairn Overturf’s Blog">
+<meta property="og:description" content="">
 <meta property="og:site_name" content="Cairn Overturf’s Blog">
-<meta property="og:image:height" content="679">
-<meta property="og:image:width" content="674">
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-fixed fullcontent quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../index.html">
+    <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">Cairn Overturf’s Blog</span>
     </a>
   </div>
@@ -131,11 +96,11 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../../index.html"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Posts</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../about.html"> 
+    <a class="nav-link active" href="./about.html" aria-current="page"> 
 <span class="menu-text">About</span></a>
   </li>  
 </ul>
@@ -149,50 +114,20 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#deriving-gjk-from-frank-wolfe-in-a-nutshell" id="toc-deriving-gjk-from-frank-wolfe-in-a-nutshell" class="nav-link active" data-scroll-target="#deriving-gjk-from-frank-wolfe-in-a-nutshell">Deriving GJK From Frank-Wolfe in a Nutshell</a></li>
-  </ul>
-</nav>
-    </div>
+    
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe</h1>
-  <div class="quarto-categories">
-    <div class="quarto-category">collision detection</div>
-    <div class="quarto-category">optimization</div>
-    <div class="quarto-category">GJK</div>
-  </div>
-  </div>
-
-<div>
-  <div class="description">
-    An optimization-oriented explanation of GJK as a fully corrective Frank-Wolfe algorithm.
-  </div>
+<h1 class="title">About</h1>
 </div>
+
 
 
 <div class="quarto-title-meta">
 
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Cairn O </p>
-          </div>
-  </div>
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">July 21, 2025</p>
-    </div>
-  </div>
   
     
   </div>
@@ -202,97 +137,22 @@ window.Quarto = {
 </header>
 
 
-<p>A few years ago in 2022 there was a great paper published <a href="https://lmontaut.github.io/nesterov-gjk.github.io/">Collision Detection Accelerated: An Optimization Perspective</a>. From the abstract:</p>
-<blockquote class="blockquote">
-<p>In this work we leverage the fact that collision detection is fundamentally a convex optimization problem. In particular, we establish that the GJK algorithm is a specific sub-case of the well-established Frank-Wolfe (FW) algorithm.</p>
-</blockquote>
-<p>As far as I can tell, the paper was not shared much in the game programming community despite being linked on the <a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">GJK Wikipedia page</a>. I have seen almost no discussion or exposition of Frank-Wolfe among game physics programmers. The goal of this blog post is to spread the word. As the authors show, there may still be ways to improve GJK using techniques from optimization.</p>
-<p>For the uninitiated, the <a href="https://en.wikipedia.org/wiki/Gilbert%E2%80%93Johnson%E2%80%93Keerthi_distance_algorithm">Gilbert–Johnson–Keerthi</a> (GJK) algorithm is an integral part of most modern video game physics engines and is used to detect when objects collide. It was discovered in 1988, and nowadays all the cool kids use it or some variant as a basis for collision detection, for example, <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/source/geomutils/src/gjk/GuGJK.h">PhysX</a>, <a href="https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/NarrowPhaseCollision/btGjkEpa2.cpp">Bullet</a>, <a href="https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Experimental/Chaos/Public/Chaos/GJK.h">Chaos</a>, <a href="https://github.com/jrouwe/JoltPhysics/blob/master/Jolt/Geometry/GJKClosestPoint.h">Jolt</a>, and <a href="https://media.steampowered.com/apps/valve/2015/DirkGregorius_Contacts.pdf">Rubikon</a>. The <a href="https://en.wikipedia.org/wiki/Frank%E2%80%93Wolfe_algorithm">Frank-Wolfe</a> (FW) algorithm is a general iterative algorithm from the mathematical optimization world used for solving convex problems. The beauty of FW is that it applies to a much broader class of problems and arguably requires less knowledge of geometry. FW was discovered in 1956 and has a <a href="https://mathshistory.st-andrews.ac.uk/Extras/Frank-Wolfe_and_friends/">delightful history</a>. It’s truly ancient. This is what your grandma used for detecting whether her polytopes intersected. Interestingly, the <a href="https://graphics.stanford.edu/courses/cs448b-00-winter/papers/gilbert.pdf">original GJK paper</a> explicitly states that the GJK algorithm is a <em>descent procedure</em> similar to an algorithm by Wolfe<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. It is unclear whether Gilbert, Johnson, or Keerthi<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> derived the algorithm from FW or maybe the connection is so <em>trivial</em> to people working in optimization that it is pointless to mention.</p>
-<p>In any case, the 2022 paper seems to be the first to show the connection explicitly, but it seems to be a well-known fact in the optimization community. For example, the 2009 paper <em><a href="https://www.m8j.net/data/List/Files-143/Coresets%20for%20Polytope%20Distance%20-%20Martins%20Version.pdf">Coresets for Polytope Distance</a>,</em> notes:</p>
-<blockquote class="blockquote">
-<p><em>Gilbert’s geometric algorithm … is in fact just an instance of the Frank–Wolfe approximation algorithm for quadratic programs</em></p>
-</blockquote>
-<p>Later in the same paper:</p>
-<blockquote class="blockquote">
-<p><em>A variant of Gilbert’s algorithm, the GJK algorithm, is a popular algorithm for collision detection in 3 dimensional space</em></p>
-</blockquote>
-<p>This is the earliest reference I found, but I would not be surprised if the connection was known since 1988 and simply never shared with game programmers<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. Perhaps game physics programmers do know of the connection and are holding out on us. It seems unlikely. In my experience, the pedagogy of GJK is very geometry-centric with the optimization perspective rarely being emphasized<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
-<p>Perhaps part of the reason for this geometric focus is that game developers have done a <em>really, really</em> good job at explaining GJK geometrically. Examples include <a href="https://www.r-5.org/files/books/computers/algo-list/game-development/Gino_van_den_Bergen-Collision_Detection_in_Interactive_3D_Environments-EN.pdf">Bergen’s book,</a> <a href="https://realtimecollisiondetection.net/pubs/SIGGRAPH04_Ericson_GJK_notes.pdf">Ericson’s book,</a> <a href="https://www.youtube.com/watch?v=Qupqu1xe7Io">the infamous presentation by Casey Muratori</a><a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>, <a href="https://box2d.org/files/ErinCatto_GJK_GDC2010.pdf">Erin Catto’s talk</a>, and others. Nonetheless, the optimization perspective is clearly valuable, as the 2022 paper demonstrates. If you want another way to understand GJK and the collision detection problem in general, I highly recommend reading the paper. It is very accessible and includes code. The rest of this blog post contains nothing not in the paper, just the points I find most salient.</p>
-<section id="deriving-gjk-from-frank-wolfe-in-a-nutshell" class="level1">
-<h1>Deriving GJK From Frank-Wolfe in a Nutshell</h1>
-<ol type="1">
-<li><p>Formulate collision detection as a convex optimization problem.</p></li>
-<li><p>Apply the Frank-Wolfe algorithm, but maintain an active set that is a simplex containing the current iterate. (In the classic FW line-search variant, the active set is just a line.)</p></li>
-</ol>
-<p>Set up the convex optimization problem:</p>
-<p><span class="math display">\[\begin{align*}
-  \text{dist}(A, B)^2 &amp;= \begin{array}[t]{ll}
-        \min_{a,b} &amp; \|a-b\|^2 \\
-        \text{subject to} &amp; a \in A \\
-                          &amp; b \in B
-    \end{array} \\[1em]
-  &amp;= \begin{array}[t]{ll}
-        \min_{x} &amp;  \|x\|^2 \\
-        \text{subject to} &amp; x \in A-B
-     \end{array}
-\end{align*}\]</span> Pattern matching gives the objective and gradient:</p>
-<p><span class="math display">\[\begin{align*}
-f(x) &amp;= \|x\|^2 \\
-\nabla f(x) &amp;= 2x
-\end{align*}\]</span> The linear subproblem is:</p>
-<p><span class="math display">\[\begin{align*}
-s_k &amp;= \arg\min_{s \in \mathcal{D}} s^T \nabla f(x_k) \\
-    &amp;= \arg\min_{s \in \mathcal{D}} s^T (2x_k) \\
-    &amp;= \arg\min_{s \in \mathcal{D}} s^T x_k \\
-    &amp;= \operatorname{support}_D(-x_k)
-\end{align*}\]</span> Plugging this into the line-search version of FW, we get Algorithm 3 from the 2022 paper. This is the standard FW line-search, expressed with an active set:</p>
-<div class="center">
-
-</div>
-<p>This looks very close to GJK, except that we always project onto a line and discard previous subproblem solutions. This algorithm works well when the origin is far from the feasible set.</p>
-<figure data-latex-placement="htbp" class="figure">
-<img src="images/figure-01.png" style="height:78.0%" class="figure-img">
-<figcaption>
-Figure 1: Frank-Wolfe line search for a 2D convex polygon converging in 2 iterations
-</figcaption>
-</figure>
-<p>When the origin is near the boundary, however, FW begins to zig-zag.</p>
-<figure data-latex-placement="htbp" class="figure">
-<img src="images/figure-02.png" style="height:78.0%" class="figure-img">
-<figcaption>
-Figure 2: Frank-Wolfe line search failing to converge after 100 iterations
-</figcaption>
-</figure>
-<p>The intuition is hopefully straightforward. Since each line search occurs only between the last iterate (inside the hull) and a vertex, we never reach the boundary. We move along each line until we hit the valley (the minimum of the quadratic restricted to that line). Notice that if we stepped all the way to the boundary (the support point) in the first iteration, the next line search would yield the exact solution (as in Figure 1). This motivates tracking a larger active set: if it included the boundary segment nearest the origin, projecting onto it would give the exact solution.</p>
-<p>Including <em>more</em> points in the active set leads to Algorithm 4 from the 2022 paper, which is GJK:</p>
-<div class="center">
-
-</div>
+<section id="welcome-to-cairns-blog" class="level2">
+<h2 class="anchored" data-anchor-id="welcome-to-cairns-blog">Welcome to Cairn’s blog</h2>
+<p>My name is Cairn. My day job is working on the Android compositor at Google but at night I am a wannabe gamedev. I plan to use this blog as a dumping ground for anything related to game programming, math, physics and OS development.</p>
+<section id="links" class="level3">
+<h3 class="anchored" data-anchor-id="links">Links</h3>
 <ul>
-<li><p>Step 4 corresponds to the GJK step of adding a support point to the simplex.</p></li>
-<li><p>Steps 5 and 6 correspond to finding the nearest point on the simplex to the origin and checking whether the simplex contains the origin, respectively.</p></li>
-<li><p>Step 7 is the portion of GJK that reduces the simplex to its boundary containing the closest point.</p></li>
+<li><a href="https://www.linkedin.com/in/cairn-overturf/">LinkedIn</a></li>
+<li><a href="https://x.com/cairnc1">Twitter</a></li>
+<li><a href="https://github.com/cairnc">Github</a></li>
 </ul>
-<p>I find this explanation of GJK far more intuitive (and easier to derive) than the purely geometric one popular online. It requires remembering only a few key ideas. Notice that we didn’t need the Minkowski difference or support functions except as notation, though understanding the geometry certainly helps. If my summary is unclear (highly likely), read the paper until it clicks. The authors explain the concepts very well and provide many useful references on active sets and related history.</p>
-<p>Thanks for reading!</p>
-<p>If you liked this post, you might like my <a href="../improvements-to-the-separating-axis/">other post about the Separating Axis Test</a>.</p>
 
 
 </section>
+</section>
 
-
-<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
-
-<ol>
-<li id="fn1"><p>P. Wolfe, “Finding the nearest point in a polytope,” Math. Programming, vol.&nbsp;11, pp.&nbsp;128-149, 1976.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>Keerthi is on LinkedIn; maybe someone should ask him :-)<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3"><p>To be clear, game developers are certainly aware that collision detection of separated shapes is a convex optimization problem, but I have not seen any discussion of FW.<br>
-<br>
-Christer Ericson <a href="https://x.com/ChristerEricson/status/1947381763455782981">tweeted</a> that game programmers probably were not aware GJK was derived from FW at the time of writing Real Time Collision Detection.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4"><p>The classic book <a href="https://www.r-5.org/files/books/computers/algo-list/game-development/Gino_van_den_Bergen-Collision_Detection_in_Interactive_3D_Environments-EN.pdf">Collision Detection in Interactive 3D Environments</a> by Gino van den Bergen does mention it briefly on page 122.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn5"><p>Casey’s video is so well-regarded that Havok (widely considered the leading physics engine) includes it in its new-hire training.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section></div></main> <!-- /main -->
+</main> <!-- /main -->
 <script>
 (() => {
   const archive = document.querySelector(".archived-comments");
@@ -738,35 +598,6 @@ Christer Ericson <a href="https://x.com/ChristerEricson/status/19473817634557829
     }
   });
   </script>
-<input type="hidden" id="giscus-base-theme" value="light">
-<input type="hidden" id="giscus-alt-theme" value="light">
-<script>
-  function loadGiscus() {
-    // Function to get the theme based on body class
-    const getTheme = () => {
-      let baseTheme = document.getElementById('giscus-base-theme').value;
-      let altTheme = document.getElementById('giscus-alt-theme').value;
-      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
-    };
-    const script = document.createElement("script");
-    script.src = "https://giscus.app/client.js";
-    script.async = true;
-    script.dataset.repo = "cairnc/blog-comments";
-    script.dataset.repoId = "R_kgDOTdXdZw";
-    script.dataset.category = "Announcements";
-    script.dataset.categoryId = "DIC_kwDOTdXdZ84DBh5j";
-    script.dataset.mapping = "pathname";
-    script.dataset.reactionsEnabled = "1";
-    script.dataset.emitMetadata = "0";
-    script.dataset.inputPosition = "top";
-    script.dataset.theme = getTheme();
-    script.dataset.lang = "en";
-    script.crossOrigin = "anonymous";
-    // Append the script to the desired div instead of at the end of the body
-    document.getElementById("quarto-content").appendChild(script);
-  }
-  loadGiscus();
-</script>
 </div> <!-- /content -->
 
 
