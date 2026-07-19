@@ -287,6 +287,207 @@ font-style: inherit;">};</span></span></code></pre></div></div>
 <p>If you want to see it in action, I’ve put together a demo for Visual Studio on Windows where you can compare the two methods and visualize gauss maps. In my testing, this graph-traversal approach is 5-10x faster than the regular SAT for convex hulls with many faces. For hull vs triangle the speed up is ~1.2x due to fewer edge cross products. Additionally, the version of the algorithm implemented in the demo has some numerical problems with triangles. I’m not sure if it’s due to contact generation or collision detection. This problem is completely fixable and I had it working at some point but the branch seems to be lost to the sands of time. Hopefully I can find some time to get it working again.</p>
 <p>I discovered this traversal method independently, but as with most problems in computational geometry, it was probably first solved by someone in the 70s. If this algorithm has a name or if you know of any games that use a similar technique, please let me know! I’d love to learn more about its history.</p>
 <p><a href="https://github.com/cairnc/sat_blog/tree/main">Github repo</a></p>
+<section class="substack-comments" aria-labelledby="earlier-discussion">
+<h2 id="earlier-discussion" class="anchored" data-anchor-id="conclusion">
+Earlier discussion
+</h2>
+<p class="substack-comments-note">
+These 9 comments originally appeared on <a href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comments">Substack</a>. Names, dates, edits, and reply relationships are preserved from the public thread.
+</p>
+<ol class="substack-comment-list">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@erwincoumans">Erwin Coumans</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138691858"><time datetime="2025-07-25T03:30:53.430Z">July 25, 2025</time></a><span class="substack-edited-badge">Edited</span>
+</header>
+<div class="substack-comment-body">
+<p>
+Are you writing a new physics engine?
+</p>
+<p>
+Btw, did you know we started the Newton physics effort, with various companies? People from MuJoCo, PhysX, Warp and Disney are joining forces: <a href="https://github.com/newton-physics/newton">https://github.com/newton-physics/newton</a>
+</p>
+</div>
+</article>
+<ol class="substack-replies">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138696227"><time datetime="2025-07-25T03:55:46.423Z">July 25, 2025</time></a>
+</header>
+<div class="substack-comment-body">
+<p>
+I have a project that I am working on as a hobby. I'd like to blog about it eventually.
+</p>
+<p>
+I did see newton, very exciting time for physics programmers!
+</p>
+</div>
+</article>
+</li>
+</ol>
+</li>
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@erwincoumans">Erwin Coumans</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138689917"><time datetime="2025-07-25T03:19:54.294Z">July 25, 2025</time></a><span class="substack-edited-badge">Edited</span>
+</header>
+<div class="substack-comment-body">
+<p>
+Thanks for the interesting article. It is hard to beat brute force SIMD code with anything complex for small problems.I recall hillclimbing, but for smallish convexes brute force SIMD was fastest. In Bullet we use this, but that code is ancient now:
+</p>
+<p>
+<a href="https://github.com/bulletphysics/bullet3/blob/master/src/LinearMath/btVector3.cpp#L46">https://github.com/bulletphysics/bullet3/blob/master/src/LinearMath/btVector3.cpp#L46</a>
+</p>
+</div>
+</article>
+<ol class="substack-replies">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/138691048"><time datetime="2025-07-25T03:26:13.986Z">July 25, 2025</time></a>
+</header>
+<div class="substack-comment-body">
+<p>
+Thanks for sharing! Yeah the traversal part can't benefit from SIMD but the "portal" intersection can. Very similar to using SIMD for dot products.
+</p>
+<p>
+<a href="https://gist.github.com/cairnc/eeb770237a18e7e7db7ac9b9cee1db18">https://gist.github.com/cairnc/eeb770237a18e7e7db7ac9b9cee1db18</a>
+</p>
+</div>
+</article>
+</li>
+</ol>
+</li>
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@sergiymigdalskiy">Sergiy Migdalskiy</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134273250"><time datetime="2025-07-11T16:10:43.342Z">July 11, 2025</time></a>
+</header>
+<div class="substack-comment-body">
+<p>
+Hi, I'm the author of the SAT chapter in Physics Pearls book.
+</p>
+<p>
+Long ago (10-15 years, so my memry is fuzzy), I implemented this very idea. The scan without some O(N^2) loop is nontrivial - I used O(N+M) Bentely-Ottmann algorithm for finding all the edge-edge intersections of the gauss maps.
+</p>
+<p>
+It has awesome theoretical properties because you're essentially just enumerating the very minimal set of axes, and you don't even have to evaluate support function for them! The perf bottleneck was the graph algorithm itself: it took ~100 vertex hull for it to start being faster than the highly SIMDizeable sweep of classic SAT (with the optimization you're mentioning here).
+</p>
+<p>
+I implemented two variants sweeping from north to south and west to east (planar graphs of a sphere are a bit tricky), but ultimately 100 vertex hulls aren't super useful in games, so I dropped the idea.
+</p>
+<p>
+It'd be very humbling to find out I was wrong and there is a fast algorithm to find all the intersections that makes this idea workable for smaller (~10 verts) hulls. I'd appreciate if you described the algorithm, as I can't tell what it is from skimming the code. At which point is it faster than SIMDized optimized classic SAT? I didn't try any other algorithms but BO, it's probably possible to make a practical BVH on the gauss map that works better, but I haven't tried it. BO is quite fast, but it's hard to beat the speed of a simple optimized SIMDized loop.
+</p>
+</div>
+</article>
+<ol class="substack-replies">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134296047"><time datetime="2025-07-11T17:20:11.203Z">July 11, 2025</time></a><span class="substack-edited-badge">Edited</span>
+</header>
+<div class="substack-comment-body">
+<p>
+Hello Sergiy, thank you for the history. I have not read physics pearls but I learned alot from your valve presentation.
+</p>
+<blockquote class="blockquote">
+<p>
+because you're essentially just enumerating the very minimal set of axes, and you don't even have to evaluate support function for them!
+</p>
+</blockquote>
+<p>
+Yes that is what my algorithm is doing, you do need to evaluate one support function to seed it.
+</p>
+<p>
+However moving between vertex regions you have to do a ray cast against a linear convex cone which I think when you tally it all up might not be much better. I also realized I uploaded the wrong version of the code to github.
+</p>
+<p>
+Edit: I had a link here but it was also the wrong version so I removed it to avoid confusing people. It has been a few years since I looked at this code and I had so many branches that its hard to remember which one is the right one.
+</p>
+<p>
+Edit 2: Ok I think I found the right version. I will update the version in the repo but this one is much simpler. I was experimenting with pretransforming geometry (since you can do it fast with SIMD) but you can ignore that part and just calculate the geometry of B in the space of A on the fly. <a href="https://gist.github.com/cairnc/cf6ecbd43ee7552c10cfcd1c448769ed">https://gist.github.com/cairnc/cf6ecbd43ee7552c10cfcd1c448769ed</a>
+</p>
+<p>
+Also don't ask me why it is in C
+</p>
+</div>
+</article>
+<ol class="substack-replies">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134307029"><time datetime="2025-07-11T17:55:19.392Z">July 11, 2025</time></a><span class="substack-edited-badge">Edited</span>
+</header>
+<div class="substack-comment-body">
+<p>
+I will leave this code but I just realized this is also not quite the right version. This version still does all the full support function evaluations for the faces normals of A. To remove this, as you trace the edges of B every arc you hit you save the min dot product from your origin vertex region. I.e. you relax the values of the support function for A's face normals. Since every face normal of A is contained in a vertex region of B, traversing all the arcs of B will mean that you've computed the dot product of a face in A with a vertex from its MD.
+</p>
+<p>
+If a normal from A is not connected to an arc that directly intersects an arc from B then you do flood fill at the end to color those "islands" which are entirely contained in a vertex region of A.
+</p>
+<p>
+I'll leave it there and keep looking for the code. I'll include a more detailed explanation in the next post.
+</p>
+</div>
+</article>
+<ol class="substack-replies">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@cairno">Cairn O</a><span class="substack-author-badge">Author</span> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134355672"><time datetime="2025-07-11T20:43:48.390Z">July 11, 2025</time></a><span class="substack-edited-badge">Edited</span>
+</header>
+<div class="substack-comment-body">
+<p>
+I updated the code in github to use the correct algorithm. I could not find the code so I tried to reimplement it from memory. It seems to be working…
+</p>
+<p>
+Unsurprisingly the cost to move between regions ends up costing the same as full support evaluation. I suspect this is some theoretical limit for small hulls and you can probably prove it using Euler's polyhedron formula. Oh well!
+</p>
+<p>
+Perhaps a better name for this article would be "How to get the same result in a more round about way" but it doesn't quite have the same ring to it.
+</p>
+<p>
+In any case, it is yet to be seen whether its SIMDized version is better than a SIMD version of the traditional algorithm. In any case here is both methods side by side. Each in a standalone function. I've tried to comment the graph traversal approach
+</p>
+<p>
+<a href="https://gist.github.com/cairnc/039a0a8253db33991fd9dd0bf2e01e0c">https://gist.github.com/cairnc/039a0a8253db33991fd9dd0bf2e01e0c</a>
+</p>
+</div>
+</article>
+<ol class="substack-replies">
+<li class="substack-comment">
+<article>
+<header class="substack-comment-header">
+<a class="substack-comment-author" href="https://substack.com/@sergiymigdalskiy">Sergiy Migdalskiy</a> <a class="substack-comment-date" href="https://cairno.substack.com/p/improvements-to-the-separating-axis/comment/134695992"><time datetime="2025-07-12T23:58:40.452Z">July 12, 2025</time></a>
+</header>
+<div class="substack-comment-body">
+<p>
+Thanks for sharing the code!
+</p>
+<p>
+Yes, this is still superlinear loop, with numerical issues, but IMHO it still hints at the possibility of a better complexity algorithm. The optimization that tests that arcs overlap on gauss map obviates the necessity to compute full support for arc-arc cases, like you correctly observed. That's step 1. Step 2 is the unnecessary O(N^2) scan over all the arc-arc (edge-edge) pairs. It's unnecessary because there is an algorithm that finds intersecting pairs in O(N+M) time and space. Unfortunately, sometimes O(N^2) is better because the constant is small. The side effect of Step 2 is that we don't have to compute support for Face-Vertex cases because the algorithm will give us information about which vertex region contains which face normal. That removes the O(F*V) step, which is another source of quadratic complexity.
+</p>
+<p>
+My Bentely-Ottmann implementation took about 1300 lines of code with all the debug and logging code included, so it's not all that complex. And it's basically returning you the arc-arc intersections without having to loop through neighbors throwing away most of the portal candidates. I'd encourage you to try it. I wasn't successful at making it competitive for small practical hulls, but I may have missed something.
+</p>
+<p>
+But fundamentally, like you observed, it's a concave optimization problem. There's no easy way (that I know of) to make it sublinear. You still have to diligently test every single axis you find, so it's still O(F+M) (M= number of arc-arc intersections of overlaid gauss maps). GJK can skip over swaths of vertices, never testing them, it can be warmstarted and it's incremental. SAT is fundamentally different. Step 3 would be to build some kind of BVH over the gauss map and maybe a primal-dual kind of iteration to quickly zoom into the correct region that contains the answer. I implemented Expanding Polytope Algorithm many years ago, it has some of these qualities, but just like with Bentley-Ottmann it's just too complicated for practical purposes.
+</p>
+</div>
+</article>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</section>
 
 
 </section>
