@@ -9,8 +9,82 @@
 <link>https://cairnc.github.io/</link>
 <atom:link href="https://cairnc.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
-<generator>quarto-1.9.38</generator>
-<lastBuildDate>Mon, 21 Jul 2025 05:00:00 GMT</lastBuildDate>
+<generator>quarto-1.10.18</generator>
+<lastBuildDate>Mon, 28 Sep 2026 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>The Level Sets of the Support Function are the Polar Dual</title>
+  <dc:creator>Cairn O</dc:creator>
+  <link>https://cairnc.github.io/posts/level-sets-of-the-support-function/</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>I was recently trying to simplify convex hulls. A common approach is to find all the face planes of the hull, merge or drop some of them, and then rebuild the hull from the planes that are left. There are two common ways to do the rebuild. The first is to make each plane a giant quad and clip it by every other plane, repeating this for each plane. The second is to take the convex hull of the face normals. Each face plane <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bn%20%5Ccdot%20x%20=%20d%7D"> becomes the point <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bn/d%7D">, so this is the convex hull of the <a href="https://en.wikipedia.org/wiki/Dual_polyhedron#Polar_reciprocation">dual polytope</a>, and its faces give the vertices of the simplified hull. I had trouble understanding the dual polytope, so this is a short explanation of it in terms of the level sets of the support function.</p>
+<p>Let <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D"> be a convex polytope with vertices <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv_%7B1%7D,%20v_%7B2%7D,%20%5Cdots%20v_%7Bk%7D%7D"> and the origin inside it. Its support function is</p>
+<p><img src="https://latex.codecogs.com/png.latex?h(y)%20=%20%5Cmax_%7Bx%20%5Cin%20P%7D%20(x%20%5Ccdot%20y)%20=%20%5Cmax_%7Bi%7D%20(v_i%20%5Ccdot%20y)"></p>
+<section id="intuition" class="level1">
+<h1>Intuition</h1>
+<p>The support function is piecewise linear. Its linear regions are wedges, one per vertex, where wedge <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bi%7D"> is the set of directions whose support vertex is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv_%7Bi%7D%7D">. On the sphere these wedges are the regions of the <a href="../../posts/improvements-to-the-separating-axis/index.html">Gauss map</a>. Let’s look at the level sets of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%7D">.</p>
+<figure data-latex-placement="htbp" class="figure">
+<img src="https://cairnc.github.io/posts/level-sets-of-the-support-function/images/figure-01.png" style="height:78.0%" class="figure-img">
+<figcaption>
+Figure 1: The cube <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5B-1,1%5D%5E%7B3%7D%7D">, the level sets of its support function <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh(y)%20=%20%7Cy_%7B1%7D%7C%20+%20%7Cy_%7B2%7D%7C%20+%20%7Cy_%7B3%7D%7C%7D"> with one octant cut away, and the Gauss map of the cube, all from the same angle. The level sets are nested octahedra and their wireframe matches the Gauss map. The octahedron face with normal <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv%7D"> sits over the highlighted region of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv%7D">.
+</figcaption>
+</figure>
+<p>Since <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%7D"> is linear inside each wedge, a level set of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%7D"> is flat inside each wedge and can only bend on the seams between wedges. From that, these properties should be clear.</p>
+<ol type="1">
+<li><p>The wireframe of a level set projects onto the Gauss map.</p></li>
+<li><p>Its faces sit over the regions of the Gauss map, one per vertex of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D">.</p></li>
+<li><p>Its vertices sit over the points where the arcs meet, one per face of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D">.</p></li>
+</ol>
+</section>
+<section id="theorem" class="level1">
+<h1>Theorem</h1>
+<p>The polar dual of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D"> is</p>
+<p><img src="https://latex.codecogs.com/png.latex?P%5E%7B%5Ccirc%7D%20=%20%5C%7By%20:%20x%20%5Ccdot%20y%20%5Cleq%201,%5C%20%5Cforall%20x%20%5Cin%20P%5C%7D"></p>
+<p><strong>Theorem.</strong> For <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bc%20%3E%200%7D"> the level set <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5C%7Bh%20%5Cleq%20c%5C%7D%7D"> is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BcP%5E%7B%5Ccirc%7D%7D">, and</p>
+<ol type="1">
+<li><p><img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> is a convex polytope.</p></li>
+<li><p>The faces of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> are the vertices of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D">. Face <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bi%7D"> lies in the plane <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv_%7Bi%7D%20%5Ccdot%20y%20=%201%7D">, so its normal is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv_%7Bi%7D%7D">.</p></li>
+<li><p>The vertices of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> are the faces of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D">. A face of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D"> with plane <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bn%20%5Ccdot%20x%20=%20d%7D"> becomes the vertex <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bn/d%7D">, and projecting the edges of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> onto the sphere gives the Gauss map.</p></li>
+</ol>
+<p><strong>Proof.</strong> From the definition of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%7D">,</p>
+<p><img src="https://latex.codecogs.com/png.latex?h(y)%20%5Cleq%201%20%5Ciff%20x%20%5Ccdot%20y%20%5Cleq%201%20%5C%20%5Ctext%7B%20for%20all%20%7D%20x%20%5Cin%20P"></p>
+<p>so <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5C%7Bh%20%5Cleq%201%5C%7D%20=%20P%5E%7B%5Ccirc%7D%7D">. Since <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh(ty)%20=%20t%5C,h(y)%7D"> for <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bt%20%3E%200%7D">, the other level sets are scaled copies,</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5C%7Bh%20%5Cleq%20c%5C%7D%20=%20cP%5E%7B%5Ccirc%7D"></p>
+<ol type="1">
+<li><p>Since <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%7D"> is a max of linear functions,</p>
+<p><img src="https://latex.codecogs.com/png.latex?P%5E%7B%5Ccirc%7D%20=%20%5Cbigcap_%7Bi%7D%20%5C%7By%20:%20v_%7Bi%7D%20%5Ccdot%20y%20%5Cleq%201%5C%7D"></p>
+<p>is an intersection of finitely many half spaces. It is bounded because the origin is inside <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D"><sup>1</sup>, so</p>
+<p><img src="https://latex.codecogs.com/png.latex?h(y)%20%5Cgeq%20m%20%5ClVert%20y%20%5CrVert,%20%5Cqquad%20m%20=%20%5Cmin_%7B%5ClVert%20y%20%5CrVert%20=%201%7D%20h(y)%20%3E%200"></p></li>
+<li><p>On wedge <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bi%7D">,</p>
+<p><img src="https://latex.codecogs.com/png.latex?h(y)%20=%20v_%7Bi%7D%20%5Ccdot%20y"></p>
+<p>so inside that wedge the boundary of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> is the plane <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bv_%7Bi%7D%20%5Ccdot%20y%20=%201%7D">. Different vertices give different planes, so neighbouring faces meet at an angle along the seams.</p></li>
+<li><p>By homogeneity every ray from the origin crosses the boundary of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> exactly once, at <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7By/h(y)%7D">. So projecting onto the sphere sends each face of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> to its wedge and each edge to a seam, which is the Gauss map. The vertices of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D"> lie where three or more wedges meet, which is along the face normals <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bn%7D"> of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%7D">. Along that ray</p>
+<p><img src="https://latex.codecogs.com/png.latex?h(tn)%20=%20t%5C,d%20=%201%20%5Cimplies%20t%20=%20%5Cfrac%7B1%7D%7Bd%7D"></p>
+<p>so the vertex is <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bn/d%7D">. <img src="https://latex.codecogs.com/png.latex?%5Cblacksquare"></p></li>
+</ol>
+</section>
+<section id="back-to-hull-simplification" class="level1">
+<h1>Back to Hull Simplification</h1>
+<p>Merging or dropping face normals edits the vertices of <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D">, and taking their convex hull rebuilds <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7BP%5E%7B%5Ccirc%7D%7D">. By part 2 of the theorem, each face <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bw%20%5Ccdot%20y%20=%201%7D"> of the new hull gives the vertex <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bw%7D"> of the simplified polytope.</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Otherwise <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%20%5Cleq%200%7D"> in some directions, those rays never reach <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7Bh%20=%201%7D">, and the level sets are unbounded.↩︎</p></li>
+</ol>
+</section></div> ]]></description>
+  <category>geometry</category>
+  <category>support function</category>
+  <guid>https://cairnc.github.io/posts/level-sets-of-the-support-function/</guid>
+  <pubDate>Mon, 28 Sep 2026 05:00:00 GMT</pubDate>
+</item>
 <item>
   <title>PSA: Collision Detection is an optimization problem and GJK is Frank-Wolfe</title>
   <dc:creator>Cairn O</dc:creator>

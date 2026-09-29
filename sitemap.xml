@@ -2,18 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/index.html</loc>
-    <lastmod>2026-07-19T16:37:48.309Z</lastmod>
-  </url>
-  <url>
-    <loc>https://cairnc.github.io/about.html</loc>
-    <lastmod>2026-07-19T16:59:23.209Z</lastmod>
-  </url>
-  <url>
-    <loc>https://cairnc.github.io/index.html</loc>
-    <lastmod>2026-07-19T17:13:14.394Z</lastmod>
+    <lastmod>2026-09-29T02:47:14.899Z</lastmod>
   </url>
   <url>
     <loc>https://cairnc.github.io/posts/improvements-to-the-separating-axis/index.html</loc>
-    <lastmod>2026-07-19T16:50:52.421Z</lastmod>
+    <lastmod>2026-09-29T02:47:14.898Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cairnc.github.io/index.html</loc>
+    <lastmod>2026-09-29T02:47:14.894Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cairnc.github.io/about.html</loc>
+    <lastmod>2026-09-29T02:47:14.894Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cairnc.github.io/posts/level-sets-of-the-support-function/index.html</loc>
+    <lastmod>2026-09-29T03:09:36.981Z</lastmod>
   </url>
 </urlset>
