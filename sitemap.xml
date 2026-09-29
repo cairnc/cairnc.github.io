@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/index.html</loc>
-    <lastmod>2026-09-29T02:47:14.899Z</lastmod>
+    <loc>https://cairnc.github.io/posts/understanding-the-dual-polytope/index.html</loc>
+    <lastmod>2026-09-29T03:24:45.586Z</lastmod>
   </url>
   <url>
     <loc>https://cairnc.github.io/posts/improvements-to-the-separating-axis/index.html</loc>
@@ -17,7 +17,7 @@
     <lastmod>2026-09-29T02:47:14.894Z</lastmod>
   </url>
   <url>
-    <loc>https://cairnc.github.io/posts/level-sets-of-the-support-function/index.html</loc>
-    <lastmod>2026-09-29T03:20:10.306Z</lastmod>
+    <loc>https://cairnc.github.io/posts/psa-collision-detection-is-an-optimization/index.html</loc>
+    <lastmod>2026-09-29T02:47:14.899Z</lastmod>
   </url>
 </urlset>
