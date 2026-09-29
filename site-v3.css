@@ -58,11 +58,19 @@
   line-height: 1.2;
 }
 
-.posts-index .post-archive-year p {
-  margin: 0;
+.posts-index .quarto-listing {
+  grid-column: 1 / -1;
 }
 
-.posts-index .quarto-listing {
+/* posts-archive.ejs emits a year label followed by that year's posts. */
+.posts-index .post-archive {
+  column-gap: 2rem;
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  row-gap: 2.5rem;
+}
+
+.posts-index .post-archive-posts {
   grid-column: 2;
 }
 
@@ -114,8 +122,16 @@
     margin-bottom: 2rem;
   }
 
+  .posts-index .post-archive {
+    display: block;
+  }
+
   .posts-index .post-archive-year {
     margin-bottom: 1rem;
+  }
+
+  .posts-index .post-archive-posts + .post-archive-year {
+    margin-top: 2.5rem;
   }
 }
 
